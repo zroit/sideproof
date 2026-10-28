@@ -11,6 +11,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
+import time
 
 import httpx
 
@@ -51,8 +52,13 @@ class ClaudeCli:
 class Gemini:
     name = 'gemini'
 
+    # Busy answers (429, 500, 503) are common and short-lived: wait and retry, last try on the
+    # lighter model. gemini-2.5-flash is closed to new keys.
+    RETRY = (429, 500, 503)
+
     def __init__(self, model=None):
-        self.model = model or os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
+        self.model = model or os.environ.get('GEMINI_MODEL', 'gemini-3.5-flash')
+        self.fallback = os.environ.get('GEMINI_FALLBACK_MODEL', 'gemini-3.1-flash-lite')
 
     def complete(self, system, prompt, image=None):
         key = config.secret('GEMINI_API_KEY')
@@ -61,11 +67,20 @@ class Gemini:
         parts = [{'text': prompt}]
         if image:
             parts.append({'inline_data': {'mime_type': 'image/jpeg', 'data': base64.b64encode(image).decode()}})
-        r = httpx.post(f'https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent',
-                       headers={'x-goog-api-key': key}, timeout=90, json={
-                           'system_instruction': {'parts': [{'text': system}]},
-                           'contents': [{'role': 'user', 'parts': parts}],
-                           'generationConfig': {'responseMimeType': 'application/json', 'temperature': 0.2}})
+        body = {'system_instruction': {'parts': [{'text': system}]},
+                'contents': [{'role': 'user', 'parts': parts}],
+                'generationConfig': {'responseMimeType': 'application/json', 'temperature': 0.2}}
+        for wait, model in ((0, self.model), (3, self.model), (6, self.fallback)):
+            time.sleep(wait)
+            try:
+                r = httpx.post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+                               headers={'x-goog-api-key': key}, timeout=90, json=body)
+            except httpx.TimeoutException:
+                continue
+            if r.status_code not in self.RETRY:
+                break
+        else:
+            raise LLMError('gemini: busy, try again in a minute')
         if r.status_code != 200:
             raise LLMError(f'gemini: HTTP {r.status_code}')
         try:
