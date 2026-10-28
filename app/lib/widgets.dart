@@ -280,3 +280,132 @@ class PhotoTips extends StatelessWidget {
     );
   }
 }
+
+/// The treated half of a photo, cut along the face's midline ([x0, x1] as fractions of width,
+/// top and bottom).
+class HalfClipper extends CustomClipper<Path> {
+  HalfClipper(this.midline, this.treatedLeft);
+  final List<double> midline;
+  final bool treatedLeft;
+
+  @override
+  Path getClip(Size s) {
+    final a = midline[0] * s.width, b = midline[1] * s.width;
+    return treatedLeft
+        ? (Path()..moveTo(0, 0)..lineTo(a, 0)..lineTo(b, s.height)..lineTo(0, s.height)..close())
+        : (Path()..moveTo(a, 0)..lineTo(s.width, 0)..lineTo(s.width, s.height)..lineTo(b, s.height)..close());
+  }
+
+  @override
+  bool shouldReclip(covariant HalfClipper old) => old.midline != midline || old.treatedLeft != treatedLeft;
+}
+
+class _Midline extends CustomPainter {
+  _Midline(this.midline, this.color);
+  final List<double> midline;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 2.5;
+    final top = Offset(midline[0] * s.width, 0), bottom = Offset(midline[1] * s.width, s.height);
+    final steps = (s.height / 14).floor();
+    for (var i = 0; i < steps; i += 2) {
+      canvas.drawLine(Offset.lerp(top, bottom, i / steps)!, Offset.lerp(top, bottom, (i + 1) / steps)!, p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _Midline old) => old.midline != midline || old.color != color;
+}
+
+/// A face photo split at its midline: YouCam's map on top (or, for the promise, YouCam's
+/// simulated photo on the treated half), each half labelled with what YouCam measured.
+class SplitPhoto extends StatelessWidget {
+  const SplitPhoto({super.key, required this.photo, required this.midline, required this.treatedLeft, this.overlay, this.treatedPhoto, this.tint = false, this.labels});
+  final ImageProvider photo;
+  final ImageProvider? overlay, treatedPhoto;
+  final List<double> midline;
+  final bool treatedLeft, tint;
+  final (String control, String treated)? labels;
+
+  @override
+  Widget build(BuildContext context) {
+    final cobalt = Sp.treated(context);
+    Widget pill(String text, bool treated) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(color: treated ? cobalt : Colors.white.withValues(alpha: 0.88), borderRadius: BorderRadius.circular(99)),
+          child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: treated ? Theme.of(context).colorScheme.onPrimary : Sp.ink)),
+        );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Stack(children: [
+        Image(image: photo, width: double.infinity, fit: BoxFit.fitWidth),
+        if (treatedPhoto != null) Positioned.fill(child: ClipPath(clipper: HalfClipper(midline, treatedLeft), child: Image(image: treatedPhoto!, fit: BoxFit.fill))),
+        if (tint) Positioned.fill(child: ClipPath(clipper: HalfClipper(midline, treatedLeft), child: Container(color: cobalt.withValues(alpha: treatedPhoto != null ? 0.12 : 0.32)))),
+        if (overlay != null) Positioned.fill(child: Image(image: overlay!, fit: BoxFit.fill, gaplessPlayback: true)),
+        Positioned.fill(child: CustomPaint(painter: _Midline(midline, cobalt))),
+        if (labels != null)
+          Positioned(
+            left: 10,
+            right: 10,
+            bottom: 10,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              textDirection: treatedLeft ? TextDirection.rtl : TextDirection.ltr,
+              children: [pill(labels!.$1, false), pill(labels!.$2, true)],
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+/// What YouCam saw on the latest photo, one concern at a time.
+class YouCamView extends StatefulWidget {
+  const YouCamView({super.key, required this.photo, required this.overlays, required this.midline, required this.treatedLeft, required this.concerns});
+  final ImageProvider photo;
+  final Map<String, ImageProvider> overlays;
+  final List<double> midline;
+  final bool treatedLeft;
+  final Map<String, dynamic> concerns;
+
+  @override
+  State<YouCamView> createState() => _YouCamViewState();
+}
+
+class _YouCamViewState extends State<YouCamView> {
+  String? _shown;
+
+  @override
+  Widget build(BuildContext context) {
+    final keys = widget.overlays.keys.where(widget.concerns.containsKey).toList();
+    if (keys.isEmpty) return const SizedBox.shrink();
+    final shown = keys.contains(_shown) ? _shown! : keys.first;
+    final stats = widget.concerns[shown] as Map<String, dynamic>;
+    final series = (stats['series'] as List?) ?? const [];
+    final last = series.isEmpty ? null : series.last as Map<String, dynamic>;
+    String pct(dynamic v) => '${(v as num).toStringAsFixed(1)}%';
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (keys.length > 1)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SegmentedButton<String>(
+            segments: [for (final k in keys) ButtonSegment(value: k, label: Text((widget.concerns[k] as Map)['label'] ?? k))],
+            selected: {shown},
+            showSelectedIcon: false,
+            onSelectionChanged: (s) => setState(() => _shown = s.first),
+          ),
+        ),
+      SplitPhoto(
+        photo: widget.photo,
+        overlay: widget.overlays[shown],
+        midline: widget.midline,
+        treatedLeft: widget.treatedLeft,
+        labels: last == null ? null : ('Control ${pct(last['control'])}', 'Treated ${pct(last['treated'])}'),
+      ),
+    ]);
+  }
+}

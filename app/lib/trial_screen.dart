@@ -8,8 +8,15 @@ import 'api.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Photos stay on this phone, for showing the shaded half; the server keeps numbers only.
-final Map<String, Uint8List> _lastPhoto = {};
+/// Photos stay on this phone; the server keeps numbers only. Per trial: the first baseline,
+/// the latest scan with YouCam's maps, and the claims' promise.
+class _Pics {
+  Uint8List? baseline, latest, promise;
+  Map<String, Uint8List> overlays = {};
+  List<double> midline = const [0.5, 0.5];
+}
+
+final Map<String, _Pics> _pics = {};
 
 class TrialScreen extends StatefulWidget {
   const TrialScreen({super.key, required this.api, this.trialId, this.initial, this.demo = false});
@@ -82,10 +89,35 @@ class _TrialScreenState extends State<TrialScreen> {
         if (mounted) _retake(r.reasons);
         return;
       }
-      _lastPhoto[_t!.id] = photo;
       final t = r as Trial;
+      final pics = _pics.putIfAbsent(t.id, _Pics.new);
+      pics.baseline ??= photo;
+      pics.latest = photo;
+      final media = t.media;
+      if (media != null) {
+        pics.overlays = {for (final e in (media['overlays'] as Map).entries) e.key as String: dataUrlBytes(e.value as String)};
+        final line = media['midline'] as List;
+        pics.midline = [(line[0][0] as num).toDouble(), (line[1][0] as num).toDouble()];
+      }
       setState(() => _t = t);
       if (t.thinking) _poll = Timer(const Duration(seconds: 3), _load);
+    } catch (e) {
+      setState(() => _error = '$e');
+    } finally {
+      if (mounted) setState(() => _busy = null);
+    }
+  }
+
+  Future<void> _promise() async {
+    final pics = _pics[_t!.id];
+    if (pics?.baseline == null) return;
+    setState(() {
+      _busy = 'YouCam AI Skin Simulation is drawing what the claims promise';
+      _error = null;
+    });
+    try {
+      final img = await widget.api.promise(_t!.id, pics!.baseline!);
+      setState(() => pics.promise = img);
     } catch (e) {
       setState(() => _error = '$e');
     } finally {
@@ -125,6 +157,7 @@ class _TrialScreenState extends State<TrialScreen> {
                   const SizedBox(height: 16),
                   if (!widget.demo) _stepCard(t),
                   if (t.verdict != null) _verdictCard(t),
+                  _youCamCard(t),
                   for (final e in t.concerns.entries)
                     if (e.value['series'] != null) _concernCard(e.value),
                   _planCard(t),
@@ -204,7 +237,7 @@ class _TrialScreenState extends State<TrialScreen> {
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final d = t.decision;
-    final photo = _lastPhoto[t.id];
+    final pics = _pics[t.id];
     final children = <Widget>[];
     if (_busy != null) {
       children.addAll([
@@ -231,9 +264,26 @@ class _TrialScreenState extends State<TrialScreen> {
       children.addAll([
         Text('Put the product on the shaded half only', style: text.titleLarge),
         const SizedBox(height: 14),
-        Center(child: HalfShade(imageLeft: t.treatedOnImageLeft, photo: photo)),
+        pics?.baseline != null
+            ? SplitPhoto(
+                photo: MemoryImage(pics!.baseline!),
+                midline: pics.midline,
+                treatedLeft: t.treatedOnImageLeft,
+                tint: true,
+                treatedPhoto: pics.promise == null ? null : MemoryImage(pics.promise!),
+              )
+            : Center(child: HalfShade(imageLeft: t.treatedOnImageLeft)),
         const SizedBox(height: 14),
         Text(d?['message'] ?? '', style: text.bodyMedium?.copyWith(height: 1.4)),
+        if (pics?.baseline != null && pics?.promise == null) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(onPressed: _promise, icon: const Icon(Icons.auto_fix_high_outlined), label: const Text('See what the claims promise')),
+        ],
+        if (pics?.promise != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text('The shaded half shows the claims\' promise, drawn by YouCam AI Skin Simulation. The trial measures what really happens.', style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+          ),
         const SizedBox(height: 16),
         FilledButton(onPressed: () => _run('Starting the trial', () => widget.api.start(t.id)), child: const Text('It\'s on: start the trial')),
       ]);
@@ -286,6 +336,57 @@ class _TrialScreenState extends State<TrialScreen> {
         border: Border.all(color: scheme.primary.withValues(alpha: 0.35), width: 1.5),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+    );
+  }
+
+  /// What YouCam saw: the latest photo with YouCam's map per concern, and the promise. The demo
+  /// trial's pictures come from the server; a person's own stay on this phone.
+  Widget _youCamCard(Trial t) {
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    ImageProvider? latest, baseline, promise;
+    Map<String, ImageProvider> overlays = {};
+    var midline = const [0.5, 0.5];
+    final m = t.media;
+    if (widget.demo && m != null && m['photos'] != null) {
+      final photos = m['photos'] as Map;
+      String url(String name) => widget.api.url('/demo-media/$name');
+      latest = NetworkImage(url(photos['latest']));
+      baseline = NetworkImage(url(photos['baseline']));
+      if (photos['promise'] != null) promise = NetworkImage(url(photos['promise']));
+      overlays = {for (final e in ((m['overlays'] as Map)['latest'] as Map).entries) e.key as String: NetworkImage(url(e.value as String))};
+      final line = m['midline'] as List;
+      midline = [(line[0][0] as num).toDouble(), (line[1][0] as num).toDouble()];
+    } else {
+      final pics = _pics[t.id];
+      if (pics?.latest == null || pics!.overlays.isEmpty) return const SizedBox.shrink();
+      latest = MemoryImage(pics.latest!);
+      if (pics.baseline != null) baseline = MemoryImage(pics.baseline!);
+      if (pics.promise != null) promise = MemoryImage(pics.promise!);
+      overlays = {for (final e in pics.overlays.entries) e.key: MemoryImage(e.value)};
+      midline = pics.midline;
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(24)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('What YouCam saw', style: text.titleLarge),
+        const SizedBox(height: 6),
+        Text('YouCam AI Skin Analysis returns a map for each concern. SideProof splits it at the midline and measures each half.',
+            style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4)),
+        const SizedBox(height: 14),
+        YouCamView(photo: latest, overlays: overlays, midline: midline, treatedLeft: t.treatedOnImageLeft, concerns: t.concerns),
+        if (promise != null && baseline != null) ...[
+          const SizedBox(height: 22),
+          Text('The promise', style: text.titleMedium),
+          const SizedBox(height: 6),
+          Text('YouCam AI Skin Simulation on the treated half: what the claims would look like before any product went on.',
+              style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4)),
+          const SizedBox(height: 12),
+          SplitPhoto(photo: baseline, treatedPhoto: promise, midline: midline, treatedLeft: t.treatedOnImageLeft),
+        ],
+      ]),
     );
   }
 

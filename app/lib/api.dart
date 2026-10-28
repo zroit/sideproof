@@ -63,10 +63,23 @@ class Api {
     return body['retake'] != null ? Retake(List<String>.from(body['retake'])) : Trial(body);
   }
 
+  /// The claims' promise: YouCam AI Skin Simulation on the baseline photo (JPEG bytes).
+  Future<Uint8List> promise(String id, Uint8List photo) async {
+    final req = http.MultipartRequest('POST', _u('/api/trials/$id/promise'))
+      ..headers.addAll(_headers)
+      ..files.add(http.MultipartFile.fromBytes('photo', photo, filename: 'baseline.jpg'));
+    final body = _decode(await http.Response.fromStream(await req.send()));
+    return dataUrlBytes(body['image']);
+  }
+
+  String url(String path) => '$base$path';
+
   Future<Trial> start(String id) async => Trial(_decode(await http.post(_u('/api/trials/$id/start'), headers: _headers)));
 
   Future<Trial> finish(String id) async => Trial(_decode(await http.post(_u('/api/trials/$id/verdict'), headers: _headers)));
 }
+
+Uint8List dataUrlBytes(String url) => base64Decode(url.substring(url.indexOf(',') + 1));
 
 class ApiError implements Exception {
   ApiError(this.message);
@@ -97,6 +110,7 @@ class Trial {
   double get hoursIn => (json['hours_in'] as num).toDouble();
   List<dynamic> get scans => json['scans'];
   List<dynamic> get agentLog => json['agent_log'] ?? [];
+  Map<String, dynamic>? get media => json['media'];
   Map<String, dynamic> get concerns => json['stats']['concerns'];
   List<dynamic> get harm => json['stats']['harm'];
 

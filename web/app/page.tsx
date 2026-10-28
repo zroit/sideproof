@@ -17,7 +17,6 @@ const STEPS = [
   { title: "Only a change past the noise counts", body: "Two photos before you start measure your face's own difference. The product has to beat it 2.5 times." },
 ] as const;
 
-type Sides = Record<string, Record<string, { img_left: number; img_right: number }>>;
 
 export default function Home() {
   const [demo, setDemo] = useState<Trial | null>(null);
@@ -28,9 +27,9 @@ export default function Home() {
   }, []);
 
   const pics = demo ? demoPics(demo) : { latest: media("latest.jpg"), baseline: media("baseline.jpg"), promise: media("promise.jpg"), overlays: { oiliness: media("latest-oiliness.png") } };
-  const sides = (demo?.media as { sides?: Sides } | undefined)?.sides?.latest?.oiliness;
   const treated = demo?.treated_image_side ?? "img_right";
   const oil = demo?.stats.concerns.oiliness;
+  const last = oil?.series?.[oil.series.length - 1]; // the trial's own numbers at 8 h
 
   return (
     <>
@@ -58,7 +57,7 @@ export default function Home() {
               overlay={pics.overlays?.oiliness}
               midline={pics.midline}
               treated={treated}
-              labels={sides ? { treated: `Treated half ${sides[treated].toFixed(1)}% oily`, control: `Control half ${sides[treated === "img_right" ? "img_left" : "img_right"].toFixed(1)}% oily` } : undefined}
+              labels={last ? { treated: `Treated half ${last.treated.toFixed(1)}% oily`, control: `Control half ${last.control.toFixed(1)}% oily` } : undefined}
             />
             <p className="caption">YouCam&apos;s oiliness map, 8 hours after a matte gel went on one half. YouCam&apos;s sample face; the gel is a digital filter.</p>
           </div>
