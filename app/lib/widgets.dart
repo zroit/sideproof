@@ -1,10 +1,25 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-/// The treated half, shaded: on the person's own photo when the app has one, else on a face outline.
+import 'brand.dart';
+import 'theme.dart';
+
+/// A trial's status in the words the person would use.
+String statusWords(String status) => switch (status) {
+      'baseline' => 'Taking the baseline photos',
+      'running' => 'In progress',
+      'concluding' => 'Ready for the verdict',
+      'done' => 'Finished',
+      'stopped' => 'Stopped: the treated half got worse',
+      _ => status,
+    };
+
+/// The treated half, shaded: on the person's own photo when the app has one, else on the face
+/// drawing. The photo is shown as taken, so the shaded half is on the same side as in the photo.
 class HalfShade extends StatelessWidget {
-  const HalfShade({super.key, required this.imageLeft, this.photo, this.height = 220});
+  const HalfShade({super.key, required this.imageLeft, this.photo, this.height = 260});
 
   final bool imageLeft;
   final Uint8List? photo;
@@ -12,13 +27,10 @@ class HalfShade extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.primary;
-    final shade = Align(
-      alignment: imageLeft ? Alignment.centerLeft : Alignment.centerRight,
-      child: FractionallySizedBox(widthFactor: 0.5, heightFactor: 1, child: Container(color: color.withValues(alpha: 0.35))),
-    );
+    final color = Sp.treated(context);
+    final scheme = Theme.of(context).colorScheme;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(22),
       child: SizedBox(
         height: height,
         child: AspectRatio(
@@ -27,9 +39,27 @@ class HalfShade extends StatelessWidget {
             if (photo != null)
               Image.memory(photo!, fit: BoxFit.cover)
             else
-              CustomPaint(painter: _FaceOutline(Theme.of(context).colorScheme.outline)),
-            shade,
-            Center(child: Container(width: 2, color: color)),
+              Container(
+                color: scheme.surfaceContainer,
+                child: Transform.flip(
+                  flipX: imageLeft,
+                  child: CustomPaint(painter: FaceScene(line: scheme.onSurface.withValues(alpha: 0.7), treated: color, control: Sp.control(context), tint: 1)),
+                ),
+              ),
+            if (photo != null)
+              Align(
+                alignment: imageLeft ? Alignment.centerLeft : Alignment.centerRight,
+                child: FractionallySizedBox(widthFactor: 0.5, heightFactor: 1, child: Container(color: color.withValues(alpha: 0.38))),
+              ),
+            Center(child: Container(width: 2.5, color: color)),
+            Align(
+              alignment: imageLeft ? const Alignment(-0.5, 0.86) : const Alignment(0.5, 0.86),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(99)),
+                child: Text('Product here', style: TextStyle(color: scheme.onPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ),
           ]),
         ),
       ),
@@ -37,49 +67,27 @@ class HalfShade extends StatelessWidget {
   }
 }
 
-class _FaceOutline extends CustomPainter {
-  _FaceOutline(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    final face = Rect.fromCenter(center: size.center(Offset.zero), width: size.width * 0.62, height: size.height * 0.78);
-    canvas.drawOval(face, p);
-    final eyeY = face.top + face.height * 0.42;
-    for (final dx in [-0.18, 0.18]) {
-      canvas.drawOval(Rect.fromCenter(center: Offset(size.width / 2 + face.width * dx, eyeY), width: face.width * 0.16, height: face.height * 0.05), p);
-    }
-    canvas.drawArc(Rect.fromCenter(center: Offset(size.width / 2, face.top + face.height * 0.74), width: face.width * 0.3, height: face.height * 0.08), 0.2, 2.7, false, p);
-  }
-
-  @override
-  bool shouldRepaint(covariant _FaceOutline old) => old.color != color;
-}
-
 /// One concern over time: the treated half minus the control half, after the face's own
 /// asymmetry is taken out. The band is the noise; points below it mean less of the concern.
 class EffectChart extends StatelessWidget {
-  const EffectChart({super.key, required this.stats});
+  const EffectChart({super.key, required this.stats, this.compact = false});
   final Map<String, dynamic> stats;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return SizedBox(
-      height: 150,
+      height: compact ? 96 : 160,
       child: CustomPaint(
         size: Size.infinite,
         painter: _EffectPainter(
           series: List<Map<String, dynamic>>.from(stats['series'] ?? []),
           threshold: (stats['threshold'] as num?)?.toDouble() ?? 1,
-          ink: scheme.onSurface,
           band: scheme.surfaceContainerHighest,
-          accent: scheme.primary,
+          treated: Sp.treated(context),
           mute: scheme.outline,
+          compact: compact,
         ),
       ),
     );
@@ -87,46 +95,56 @@ class EffectChart extends StatelessWidget {
 }
 
 class _EffectPainter extends CustomPainter {
-  _EffectPainter({required this.series, required this.threshold, required this.ink, required this.band, required this.accent, required this.mute});
+  _EffectPainter({required this.series, required this.threshold, required this.band, required this.treated, required this.mute, required this.compact});
 
   final List<Map<String, dynamic>> series;
   final double threshold;
-  final Color ink, band, accent, mute;
+  final Color band, treated, mute;
+  final bool compact;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (series.isEmpty) return;
-    const left = 34.0, bottom = 18.0;
+    final left = compact ? 0.0 : 44.0, bottom = compact ? 4.0 : 20.0;
     final w = size.width - left, h = size.height - bottom;
     final hours = series.map((s) => (s['hours'] as num).toDouble()).toList();
     final effects = series.map((s) => (s['effect'] as num).toDouble()).toList();
-    final maxH = hours.reduce((a, b) => a > b ? a : b).clamp(1, double.infinity);
-    final span = [threshold * 1.6, ...effects.map((e) => e.abs() * 1.15)].reduce((a, b) => a > b ? a : b);
-    double x(double hr) => left + hr / maxH * w;
-    double y(double e) => h / 2 - e / span * (h / 2);
+    final maxH = max(1.0, hours.reduce(max));
+    final span = [threshold * 1.6, ...effects.map((e) => e.abs() * 1.15)].reduce(max);
+    double x(double hr) => left + 8 + hr / maxH * (w - 16);
+    double y(double e) => h / 2 - e / span * (h / 2 - 6);
 
-    canvas.drawRect(Rect.fromLTRB(left, y(threshold), size.width, y(-threshold)), Paint()..color = band);
-    canvas.drawLine(Offset(left, y(0)), Offset(size.width, y(0)), Paint()..color = mute..strokeWidth = 1);
-    _text(canvas, 'worse', Offset(0, 2), mute);
-    _text(canvas, 'better', Offset(0, h - 14), mute);
-    _text(canvas, '0 h', Offset(left, h + 3), mute);
-    _text(canvas, '${maxH.toStringAsFixed(0)} h', Offset(size.width - 26, h + 3), mute);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(left, y(threshold), size.width, y(-threshold)), const Radius.circular(8)), Paint()..color = band);
+    canvas.drawLine(Offset(left, y(0)), Offset(size.width, y(0)), Paint()
+      ..color = mute.withValues(alpha: 0.5)
+      ..strokeWidth = 1);
+    if (!compact) {
+      _text(canvas, 'worse', const Offset(0, 0), mute);
+      _text(canvas, 'better', Offset(0, h - 14), mute);
+      _text(canvas, 'noise', Offset(0, y(0) - 7), mute);
+      _text(canvas, '0 h', Offset(left + 2, h + 4), mute);
+      _text(canvas, '${maxH.toStringAsFixed(0)} h', Offset(size.width - 28, h + 4), mute);
+    }
 
     final line = Path();
     for (var i = 0; i < series.length; i++) {
       final o = Offset(x(hours[i]), y(effects[i]));
       i == 0 ? line.moveTo(o.dx, o.dy) : line.lineTo(o.dx, o.dy);
     }
-    canvas.drawPath(line, Paint()..color = accent.withValues(alpha: 0.5)..style = PaintingStyle.stroke..strokeWidth = 2);
+    canvas.drawPath(line, Paint()
+      ..color = treated.withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeJoin = StrokeJoin.round);
     for (var i = 0; i < series.length; i++) {
       final baseline = series[i]['phase'] == 'baseline';
-      canvas.drawCircle(Offset(x(hours[i]), y(effects[i])), 4.5, Paint()..color = baseline ? mute : accent);
+      final at = Offset(x(hours[i]), y(effects[i]));
+      canvas.drawCircle(at, 5, Paint()..color = baseline ? mute : treated);
     }
   }
 
   void _text(Canvas canvas, String s, Offset at, Color color) {
-    (TextPainter(text: TextSpan(text: s, style: TextStyle(fontSize: 10, color: color)), textDirection: TextDirection.ltr)..layout())
-        .paint(canvas, at);
+    (TextPainter(text: TextSpan(text: s, style: TextStyle(fontSize: 11, color: color)), textDirection: TextDirection.ltr)..layout()).paint(canvas, at);
   }
 
   @override
@@ -139,16 +157,126 @@ class VerdictChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (verdict) {
-      'better' => ('Better', const Color(0xFF2F7D5B)),
-      'worse' => ('Worse', const Color(0xFFB4442F)),
-      'unclear' => ('Too early to tell', Theme.of(context).colorScheme.outline),
-      _ => ('Waiting for scans', Theme.of(context).colorScheme.outline),
+    final label = switch (verdict) {
+      'better' => 'Better',
+      'worse' => 'Worse',
+      'unclear' => 'Too early to tell',
+      _ => 'Waiting for scans',
     };
+    final color = Sp.verdict(verdict, context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(border: Border.all(color: color), borderRadius: BorderRadius.circular(99)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(99)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+/// Where the trial is: baseline photos, product on, scans, verdict.
+class TrialTimeline extends StatelessWidget {
+  const TrialTimeline({super.key, required this.step, required this.notes});
+
+  /// 0 baseline, 1 product on, 2 scans, 3 verdict.
+  final int step;
+  final List<String> notes;
+
+  static const _names = ['Baseline', 'Product on', 'Scans', 'Verdict'];
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final finished = step >= _names.length - 1;
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      for (var i = 0; i < _names.length; i++)
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              height: 6,
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: i < step || finished ? scheme.primary : i == step ? scheme.primary.withValues(alpha: 0.45) : scheme.outlineVariant,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(_names[i], style: text.labelMedium?.copyWith(fontWeight: i == step ? FontWeight.w700 : FontWeight.w500, color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant)),
+            if (i < notes.length && notes[i].isNotEmpty) Text(notes[i], style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+          ]),
+        ),
+    ]);
+  }
+}
+
+/// The verdict as a picture: the split disc, its treated half in the colour of the result.
+class VerdictDisc extends StatelessWidget {
+  const VerdictDisc({super.key, required this.verdict, this.size = 64});
+  final String? verdict;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(size: Size.square(size), painter: _DiscPainter(Sp.verdict(verdict, context), Theme.of(context).colorScheme.outlineVariant));
+}
+
+class _DiscPainter extends CustomPainter {
+  _DiscPainter(this.result, this.control);
+  final Color result, control;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero), r = size.shortestSide / 2 - 3, gap = size.shortestSide * 0.06;
+    canvas.drawPath(Path()
+      ..addArc(Rect.fromCircle(center: c.translate(-gap / 2, 0), radius: r), pi / 2, pi)
+      ..close(), Paint()..color = control);
+    canvas.drawPath(Path()
+      ..addArc(Rect.fromCircle(center: c.translate(gap / 2, 0), radius: r), -pi / 2, pi)
+      ..close(), Paint()..color = result);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DiscPainter old) => old.result != result || old.control != control;
+}
+
+/// What to do before each photo, so the two halves are lit and framed the same way.
+class PhotoTips extends StatelessWidget {
+  const PhotoTips({super.key});
+
+  static const _tips = [
+    (Icons.wb_twilight_outlined, 'Face a window', 'Even light on both halves'),
+    (Icons.face_retouching_off_outlined, 'Bare skin', 'No makeup, hair back'),
+    (Icons.center_focus_strong_outlined, 'Look straight', 'Phone at eye level'),
+    (Icons.place_outlined, 'Same spot', 'Same place every time'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 2.15,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      children: [
+        for (final (icon, title, sub) in _tips)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(14)),
+            child: Row(children: [
+              Icon(icon, size: 22, color: scheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(title, style: text.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(sub, style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ]),
+              ),
+            ]),
+          ),
+      ],
     );
   }
 }

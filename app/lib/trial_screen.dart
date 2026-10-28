@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'api.dart';
+import 'theme.dart';
 import 'widgets.dart';
 
 /// Photos stay on this phone, for showing the shaded half; the server keeps numbers only.
@@ -72,7 +73,7 @@ class _TrialScreenState extends State<TrialScreen> {
     if (f == null) return;
     final photo = await f.readAsBytes();
     setState(() {
-      _busy = 'YouCam Skin AI is measuring both halves…';
+      _busy = 'YouCam Skin AI is measuring both halves';
       _error = null;
     });
     try {
@@ -105,54 +106,94 @@ class _TrialScreenState extends State<TrialScreen> {
   Widget build(BuildContext context) {
     final t = _t;
     return Scaffold(
-      appBar: AppBar(title: Text(t?.product ?? 'Trial'), actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))]),
+      appBar: AppBar(title: Text(t?.product ?? 'Trial'), actions: [IconButton(onPressed: _load, tooltip: 'Refresh', icon: const Icon(Icons.refresh))]),
       body: t == null
-          ? Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator())
+          ? Center(child: _error != null ? Padding(padding: const EdgeInsets.all(24), child: Text(_error!)) : const CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: ListView(padding: const EdgeInsets.all(16), children: [
-                if (widget.demo) const _Note('Demo trial: YouCam\'s sample face, with a digital matte filter on one half playing the product.'),
-                _header(t),
-                _planCard(t),
-                if (!widget.demo) _stepCard(t),
-                if (t.verdict != null) _verdictCard(t.verdict!),
-                for (final e in t.concerns.entries) _concernCard(e.value),
-                _agentLog(t),
-              ]),
+              child: Column560(
+                child: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 32), children: [
+                  if (widget.demo) const _Note('Demo trial: YouCam\'s sample face, with a digital matte filter on one half playing the product.'),
+                  _header(t),
+                  const SizedBox(height: 14),
+                  TrialTimeline(step: _stepOf(t), notes: [
+                    t.status == 'baseline' && !t.canStart ? '${t.baselineScans} of 2' : '',
+                    '',
+                    t.trialScans > 0 ? '${t.trialScans} done' : '',
+                    '',
+                  ]),
+                  const SizedBox(height: 16),
+                  if (!widget.demo) _stepCard(t),
+                  if (t.verdict != null) _verdictCard(t),
+                  for (final e in t.concerns.entries)
+                    if (e.value['series'] != null) _concernCard(e.value),
+                  _planCard(t),
+                  _agentLog(t),
+                ]),
+              ),
             ),
     );
   }
 
+  int _stepOf(Trial t) {
+    if (t.verdict != null) return 3;
+    if (t.status == 'baseline') return t.canStart ? 1 : 0;
+    return 2;
+  }
+
+  /// One result for the whole trial: worse wins, then better, else too early.
+  String _overall(Trial t) {
+    final v = t.concerns.values.map((c) => c['verdict']).toList();
+    return v.contains('worse') ? 'worse' : v.contains('better') ? 'better' : 'unclear';
+  }
+
   Widget _header(Trial t) {
     final text = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-        Chip(label: Text(t.status)),
-        if (t.skinType != null) Chip(label: Text('Skin type ${t.skinType}')),
-        Text('Product on your ${t.treatedSide} side', style: text.bodyMedium),
-      ]),
-    );
+    final scheme = Theme.of(context).colorScheme;
+    return Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+      _Pill(statusWords(t.status)),
+      if (t.skinType != null) _Pill('Skin type ${t.skinType}'),
+      Text.rich(TextSpan(children: [
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Container(width: 10, height: 10, margin: const EdgeInsets.only(right: 6), decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle)),
+        ),
+        TextSpan(text: 'Product on your ${t.treatedSide} side'),
+      ]), style: text.bodyMedium),
+    ]);
   }
 
   Widget _planCard(Trial t) {
     final p = t.plan;
     final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
     final cautions = List<String>.from(p['cautions'] ?? []);
     final safe = p['safe_to_try'] != false;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('The plan', style: text.titleMedium),
           const SizedBox(height: 6),
-          Text(p['summary'] ?? ''),
-          const SizedBox(height: 8),
-          Text('${p['days']} day(s), a scan every ${p['scan_every_hours']} h${p['patch_first'] == true ? ', small patch first' : ''}', style: text.bodySmall),
+          Text(p['summary'] ?? '', style: text.bodyMedium?.copyWith(height: 1.4)),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            _Pill('${p['days']} ${p['days'] == 1 ? 'day' : 'days'}', icon: Icons.calendar_today_outlined),
+            _Pill('A scan every ${p['scan_every_hours']} h', icon: Icons.schedule),
+            if (p['patch_first'] == true) const _Pill('Small patch first', icon: Icons.healing_outlined),
+          ]),
           if (cautions.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            if (!safe) _Note('Do not try this without a doctor.', danger: true),
-            for (final c in cautions) Padding(padding: const EdgeInsets.only(top: 4), child: Text('• $c', style: text.bodySmall)),
+            const SizedBox(height: 12),
+            if (!safe) const _Note('Do not try this without a doctor.', danger: true),
+            for (final c in cautions)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.info_outline, size: 16, color: scheme.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(c, style: text.bodySmall)),
+                ]),
+              ),
           ],
         ]),
       ),
@@ -161,108 +202,154 @@ class _TrialScreenState extends State<TrialScreen> {
 
   Widget _stepCard(Trial t) {
     final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
     final d = t.decision;
     final photo = _lastPhoto[t.id];
     final children = <Widget>[];
     if (_busy != null) {
-      children.addAll([const LinearProgressIndicator(), const SizedBox(height: 8), Text(_busy!)]);
+      children.addAll([
+        Text(_busy!, style: text.titleMedium),
+        const SizedBox(height: 12),
+        const LinearProgressIndicator(minHeight: 6, borderRadius: BorderRadius.all(Radius.circular(3))),
+      ]);
     } else if (t.status == 'baseline' && !t.canStart) {
       children.addAll([
-        Text('Baseline ${t.baselineScans + 1} of 2', style: text.titleMedium),
+        Text('Baseline photo ${t.baselineScans + 1} of 2', style: text.titleLarge),
         const SizedBox(height: 6),
-        const Text('Before any product: face a window, hair back, no makeup. Take the photo in the same place and light every time.'),
-        const SizedBox(height: 12),
-        FilledButton.icon(onPressed: _scan, icon: const Icon(Icons.photo_camera), label: const Text('Take baseline photo')),
+        Text(
+          t.baselineScans == 0
+              ? 'Before any product. These two photos measure your face\'s own left-right difference.'
+              : 'A few minutes after the first one, same place, same light.',
+          style: text.bodyMedium?.copyWith(height: 1.4, color: scheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 14),
+        const PhotoTips(),
+        const SizedBox(height: 16),
+        FilledButton.icon(onPressed: _scan, icon: const Icon(Icons.photo_camera_outlined), label: const Text('Take baseline photo')),
       ]);
     } else if (t.canStart) {
       children.addAll([
-        Text('Put the product on the shaded half only', style: text.titleMedium),
-        const SizedBox(height: 10),
+        Text('Put the product on the shaded half only', style: text.titleLarge),
+        const SizedBox(height: 14),
         Center(child: HalfShade(imageLeft: t.treatedOnImageLeft, photo: photo)),
-        const SizedBox(height: 10),
-        Text(d?['message'] ?? ''),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: () => _run('Starting…', () => widget.api.start(t.id)), child: const Text('It\'s on: start the trial')),
+        const SizedBox(height: 14),
+        Text(d?['message'] ?? '', style: text.bodyMedium?.copyWith(height: 1.4)),
+        const SizedBox(height: 16),
+        FilledButton(onPressed: () => _run('Starting the trial', () => widget.api.start(t.id)), child: const Text('It\'s on: start the trial')),
       ]);
     } else if (t.status == 'running' || t.status == 'concluding') {
       children.addAll([
         Row(children: [
-          Icon(Icons.auto_awesome, size: 18, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 6),
-          Text('Agent', style: text.titleMedium),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: Icon(Icons.auto_awesome, size: 18, color: scheme.primary),
+          ),
+          const SizedBox(width: 10),
+          Text('Your trial agent', style: text.titleMedium),
         ]),
-        const SizedBox(height: 6),
-        Text(t.thinking ? 'Looking at the new scan…' : (d?['message'] ?? 'Take your first scan when the plan says.')),
-        if (d?['next_scan_in_hours'] != null) Text('Next scan in ${d!['next_scan_in_hours']} h', style: text.bodySmall),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        Text(t.thinking ? 'Looking at the new scan…' : (d?['message'] ?? 'Take your first scan when the plan says.'), style: text.bodyLarge?.copyWith(height: 1.4)),
+        if (d?['next_scan_in_hours'] != null) ...[
+          const SizedBox(height: 8),
+          _Pill('Next scan in ${d!['next_scan_in_hours']} h', icon: Icons.schedule),
+        ],
+        const SizedBox(height: 16),
         Row(children: [
-          Expanded(child: FilledButton.icon(onPressed: _scan, icon: const Icon(Icons.photo_camera), label: const Text('Take a scan'))),
-          const SizedBox(width: 8),
-          OutlinedButton(onPressed: t.measured ? () => _run('The agent is writing the verdict…', () => widget.api.finish(t.id)) : null, child: const Text('Finish')),
+          Expanded(flex: 3, child: FilledButton.icon(onPressed: _scan, icon: const Icon(Icons.photo_camera_outlined), label: const Text('Take a scan'))),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 2,
+            child: OutlinedButton(onPressed: t.measured ? () => _run('The agent is writing the verdict', () => widget.api.finish(t.id)) : null, child: const Text('Finish')),
+          ),
         ]),
       ]);
     } else if (t.status == 'stopped') {
       children.addAll([
         const _Note('Stopped: the treated half got worse.', danger: true),
-        Text(d?['message'] ?? 'Wash the product off. See a dermatologist if it stays.'),
+        Text(d?['message'] ?? 'Wash the product off. See a dermatologist if it stays.', style: text.bodyLarge),
         if (t.verdict == null) ...[
-          const SizedBox(height: 12),
-          OutlinedButton(onPressed: () => _run('The agent is writing the verdict…', () => widget.api.finish(t.id)), child: const Text('See the verdict')),
+          const SizedBox(height: 16),
+          OutlinedButton(onPressed: () => _run('The agent is writing the verdict', () => widget.api.finish(t.id)), child: const Text('See the verdict')),
         ],
       ]);
     }
-    if (_error != null) children.add(Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))));
+    if (_error != null) children.add(Padding(padding: const EdgeInsets.only(top: 12), child: _Note(_error!, danger: true)));
     if (children.isEmpty) return const SizedBox.shrink();
-    return Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children)));
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.35), width: 1.5),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+    );
   }
 
-  Widget _verdictCard(Map<String, dynamic> v) {
+  Widget _verdictCard(Trial t) {
+    final v = t.verdict!;
     final text = Theme.of(context).textTheme;
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Verdict', style: text.labelLarge),
-          const SizedBox(height: 4),
-          Text(v['headline'] ?? '', style: text.titleMedium),
-          const SizedBox(height: 10),
-          for (final c in v['claims'] ?? [])
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text.rich(TextSpan(children: [
-                TextSpan(text: '"${c['claim']}"  ', style: const TextStyle(fontStyle: FontStyle.italic)),
-                TextSpan(text: '${c['result']}', style: const TextStyle(fontWeight: FontWeight.w600)),
-              ])),
-            ),
-          if ((v['next'] ?? '').toString().isNotEmpty) ...[const SizedBox(height: 6), Text(v['next'])],
+    final scheme = Theme.of(context).colorScheme;
+    final overall = _overall(t);
+    Color claimColor(String r) => r.startsWith('supported') ? Sp.better : r.startsWith('not supported') ? Sp.worse : scheme.outline;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(24)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          VerdictDisc(verdict: overall, size: 56),
+          const SizedBox(width: 14),
+          Expanded(child: Text(v['headline'] ?? '', style: text.titleLarge)),
         ]),
-      ),
+        if ((v['claims'] as List?)?.isNotEmpty == true) ...[
+          const SizedBox(height: 16),
+          Text('The claims', style: text.titleMedium),
+          const SizedBox(height: 6),
+          for (final c in v['claims'])
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(flex: 3, child: Text('"${c['claim']}"', style: text.bodyMedium?.copyWith(fontStyle: FontStyle.italic, height: 1.35))),
+                const SizedBox(width: 10),
+                Flexible(flex: 2, child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: BoxDecoration(color: claimColor('${c['result']}').withValues(alpha: 0.12), borderRadius: BorderRadius.circular(99)),
+                  child: Text('${c['result']}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: claimColor('${c['result']}'))),
+                )),
+              ]),
+            ),
+        ],
+        if ((v['next'] ?? '').toString().isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(v['next'], style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4)),
+        ],
+      ]),
     );
   }
 
   Widget _concernCard(Map<String, dynamic> s) {
     final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
     final measured = s['state'] == 'measured';
+    final small = text.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.45);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(s['label'] ?? s['concern'], style: text.titleMedium)),
             VerdictChip(measured ? s['verdict'] : null),
           ]),
-          if (s['series'] != null) ...[
-            const SizedBox(height: 10),
-            EffectChart(stats: s),
-            const SizedBox(height: 6),
-            Text(
-              'Your face\'s own difference: ${s['asymmetry']} · photo-to-photo noise: ${s['noise']}'
-              '${measured ? ' · product effect: ${s['effect']} (counts past ±${s['threshold']})' : ''}',
-              style: text.bodySmall,
-            ),
-          ] else
-            Padding(padding: const EdgeInsets.only(top: 6), child: Text('Needs two baseline photos.', style: text.bodySmall)),
+          const SizedBox(height: 12),
+          EffectChart(stats: s),
+          const SizedBox(height: 10),
+          Text('Your face\'s own left-right difference: ${s['asymmetry']}', style: small),
+          Text('Photo-to-photo noise: ${s['noise']}. A change counts past ±${s['threshold']}.', style: small),
+          if (measured) Text('Product effect: ${s['effect']}', style: small?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600)),
         ]),
       ),
     );
@@ -273,10 +360,11 @@ class _TrialScreenState extends State<TrialScreen> {
     final text = Theme.of(context).textTheme;
     const jobs = {'plan': 'Planning', 'next_step': 'After a scan', 'verdict': 'Verdict'};
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        leading: const Icon(Icons.auto_awesome),
-        title: const Text('How the agent worked'),
-        subtitle: Text('${t.agentLog.length} steps · numbers come only from YouCam and the trial math', style: text.bodySmall),
+        leading: Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+        title: Text('How the agent worked', style: text.titleMedium),
+        subtitle: Text('${t.agentLog.length} steps. Every number comes from YouCam or the trial math.', style: text.bodySmall),
         children: [
           for (final s in t.agentLog)
             ListTile(
@@ -286,6 +374,25 @@ class _TrialScreenState extends State<TrialScreen> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill(this.label, {this.icon});
+  final String label;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(99)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (icon != null) ...[Icon(icon, size: 14, color: scheme.onSurfaceVariant), const SizedBox(width: 5)],
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: scheme.onSurface)),
+      ]),
     );
   }
 }
@@ -300,10 +407,10 @@ class _Note extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: danger ? scheme.errorContainer : scheme.secondaryContainer, borderRadius: BorderRadius.circular(10)),
-      child: Text(text, style: TextStyle(color: danger ? scheme.onErrorContainer : scheme.onSecondaryContainer)),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: (danger ? Sp.worse : scheme.primary).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+      child: Text(text, style: TextStyle(color: danger ? Sp.worse : scheme.onSurface, height: 1.4)),
     );
   }
 }
