@@ -1,0 +1,133 @@
+{
+ "trials": [
+  {
+   "id": "o2X3GB6za8Th",
+   "device": "demo",
+   "product": "Matte Gel",
+   "code": null,
+   "treated": "img_right",
+   "plan": "{\"product\": \"Matte Gel\", \"claims\": [{\"text\": \"Controls shine for up to 8 hours\", \"concern\": \"oiliness\"}, {\"text\": \"Light, non-greasy hydration\", \"concern\": \"moisture\"}], \"concerns\": [\"oiliness\", \"moisture\"], \"days\": 1, \"scan_every_hours\": 4, \"patch_first\": false, \"safe_to_try\": true, \"cautions\": [], \"summary\": \"1-day split-face test monitoring oiliness and hydration every 4 hours to evaluate shine control and moisture.\"}",
+   "status": "done",
+   "decision": "{\"state\": \"done\", \"action\": \"continue\", \"message\": \"Your oiliness is showing improvement, while moisture levels remain stable. Please continue with the trial as planned.\", \"next_scan_in_hours\": 16, \"allowed\": [\"continue\"]}",
+   "verdict": "{\"headline\": \"The product is effectively controlling oiliness, while moisture levels remain unchanged beyond the noise threshold.\", \"concerns\": [{\"concern\": \"oiliness\", \"verdict\": \"better\", \"text\": \"The treated side shows a measurable reduction in oiliness compared to the control.\"}, {\"concern\": \"moisture\", \"verdict\": \"unclear\", \"text\": \"The moisture levels on the treated side are not significantly different from the control.\"}], \"claims\": [{\"claim\": \"Controls shine for up to 8 hours\", \"result\": \"supported\"}, {\"claim\": \"Light, non-greasy hydration\", \"result\": \"too early\"}], \"next\": \"Continue the trial to monitor if moisture levels improve over time.\"}",
+   "skin_type": "II",
+   "created_at": 1793190956.1699436,
+   "started_at": 1793191256.1699436
+  }
+ ],
+ "scans": [
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "phase": "baseline",
+   "at": 1793190956.1699436,
+   "checks": "{\"face_width\": 0.677, \"yaw\": 0.517, \"roll\": -0.4, \"light_left\": 148.0, \"light_right\": 142.0, \"sharpness\": 172.2}",
+   "sides": "{\"oiliness\": {\"img_left\": 12.682, \"img_right\": 9.9}, \"moisture\": {\"img_left\": 48.948, \"img_right\": 46.29}}",
+   "scores": "{\"raw\": {\"oiliness\": 45.342979431152344, \"moisture\": 37.4280571937561}, \"ui\": {\"oiliness\": 65, \"moisture\": 65}, \"overall\": 65.0}",
+   "units": 9
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "phase": "baseline",
+   "at": 1793191256.1699436,
+   "checks": "{\"face_width\": 0.678, \"yaw\": 0.518, \"roll\": -0.4, \"light_left\": 150.0, \"light_right\": 144.0, \"sharpness\": 179.4}",
+   "sides": "{\"oiliness\": {\"img_left\": 12.259, \"img_right\": 9.607}, \"moisture\": {\"img_left\": 48.929, \"img_right\": 46.159}}",
+   "scores": "{\"raw\": {\"oiliness\": 45.69660949707031, \"moisture\": 37.589842081069946}, \"ui\": {\"oiliness\": 66, \"moisture\": 65}, \"overall\": 65.5}",
+   "units": 9
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "phase": "trial",
+   "at": 1793194856.1699436,
+   "checks": "{\"face_width\": 0.676, \"yaw\": 0.519, \"roll\": -0.2, \"light_left\": 148.0, \"light_right\": 137.0, \"sharpness\": 151.7}",
+   "sides": "{\"oiliness\": {\"img_left\": 13.138, \"img_right\": 1.318}, \"moisture\": {\"img_left\": 48.662, \"img_right\": 44.315}}",
+   "scores": "{\"raw\": {\"oiliness\": 52.89822006225586, \"moisture\": 40.626323223114014}, \"ui\": {\"oiliness\": 69, \"moisture\": 66}, \"overall\": 67.5}",
+   "units": 9
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "phase": "trial",
+   "at": 1793205656.1699436,
+   "checks": "{\"face_width\": 0.675, \"yaw\": 0.518, \"roll\": -0.3, \"light_left\": 148.0, \"light_right\": 138.0, \"sharpness\": 152.1}",
+   "sides": "{\"oiliness\": {\"img_left\": 12.698, \"img_right\": 2.761}, \"moisture\": {\"img_left\": 48.816, \"img_right\": 44.942}}",
+   "scores": "{\"raw\": {\"oiliness\": 52.69648361206055, \"moisture\": 39.26433324813843}, \"ui\": {\"oiliness\": 69, \"moisture\": 66}, \"overall\": 67.5}",
+   "units": 9
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "phase": "trial",
+   "at": 1793220056.1699436,
+   "checks": "{\"face_width\": 0.677, \"yaw\": 0.516, \"roll\": -0.4, \"light_left\": 147.0, \"light_right\": 140.0, \"sharpness\": 161.2}",
+   "sides": "{\"oiliness\": {\"img_left\": 12.078, \"img_right\": 7.102}, \"moisture\": {\"img_left\": 48.979, \"img_right\": 45.543}}",
+   "scores": "{\"raw\": {\"oiliness\": 48.38963317871094, \"moisture\": 38.255828619003296}, \"ui\": {\"oiliness\": 67, \"moisture\": 66}, \"overall\": 66.5}",
+   "units": 9
+  }
+ ],
+ "agent_log": [
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793190956.1699436,
+   "job": "plan",
+   "step": "{\"thought\": \"Fetch the concern catalog to match product claims.\", \"tool\": \"concern_catalog\"}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793190956.1699436,
+   "job": "plan",
+   "step": "{\"thought\": \"Draft split-face trial for Matte Gel based on oiliness and moisture claims.\", \"final\": {\"product\": \"Matte Gel\", \"claims\": [{\"text\": \"Controls shine for up to 8 hours\", \"concern\": \"oiliness\"}, {\"text\": \"Light, non-greasy hydration\", \"concern\": \"moisture\"}], \"concerns\": [\"oiliness\", \"moisture\"], \"days\": 1, \"scan_every_hours\": 4, \"patch_first\": false, \"safe_to_try\": true, \"cautions\": [], \"summary\": \"1-day split-face test monitoring oiliness and hydration every 4 hours to evaluate shine control and moisture.\"}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793194856.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"Fetch trial statistics to evaluate the latest scan.\", \"tool\": \"trial_stats\"}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793194856.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"Fetch trial plan to check scan intervals and goals.\", \"tool\": \"trial_plan\"}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793194856.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"Formulate response based on trial results and plan.\", \"final\": {\"action\": \"continue\", \"message\": \"The latest scan shows a significant reduction in oiliness and slightly less dryness on the treated side. Please continue with the trial. Your next scan is scheduled in 4 hours.\", \"next_scan_in_hours\": 4}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793205656.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"Check trial plan details.\", \"tool\": \"trial_plan\"}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793205656.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"Check trial stats for latest scan results.\", \"tool\": \"trial_stats\"}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793205656.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"Formulate response to continue the trial.\", \"final\": {\"action\": \"continue\", \"message\": \"At 4 hours, oiliness is significantly lower on the treated side compared to the control side, and moisture levels show slight improvement. Keep the product on and take your next scan in 4 hours.\", \"next_scan_in_hours\": 4}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793220056.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"Check trial statistics to assess changes.\", \"tool\": \"trial_stats\"}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793220056.1699436,
+   "job": "next_step",
+   "step": "{\"thought\": \"The oiliness reduction is stabilizing, and moisture levels are within the noise threshold. I will advise the user to continue the trial.\", \"final\": {\"action\": \"continue\", \"message\": \"Your oiliness is showing improvement, while moisture levels remain stable. Please continue with the trial as planned.\", \"next_scan_in_hours\": 16}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "o2X3GB6za8Th",
+   "at": 1793220176.1699436,
+   "job": "verdict",
+   "step": "{\"thought\": null, \"final\": {\"headline\": \"The product is effectively controlling oiliness, while moisture levels remain unchanged beyond the noise threshold.\", \"concerns\": [{\"concern\": \"oiliness\", \"verdict\": \"better\", \"text\": \"The treated side shows a measurable reduction in oiliness compared to the control.\"}, {\"concern\": \"moisture\", \"verdict\": \"unclear\", \"text\": \"The moisture levels on the treated side are not significantly different from the control.\"}], \"claims\": [{\"claim\": \"Controls shine for up to 8 hours\", \"result\": \"supported\"}, {\"claim\": \"Light, non-greasy hydration\", \"result\": \"too early\"}], \"next\": \"Continue the trial to monitor if moisture levels improve over time.\"}, \"rejected\": null}"
+  }
+ ]
+}

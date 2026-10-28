@@ -80,3 +80,39 @@ def test_the_verdict_cannot_change_or_skip_a_measured_result():
                       lambda job, step: steps.append(step))
     assert v['concerns'][0]['verdict'] == 'unclear'
     assert [bool(s['rejected']) for s in steps] == [True, True, False]
+
+
+def test_an_answer_without_the_final_wrapper_still_counts():
+    # gemini-3.5-flash often returns the verdict itself instead of {"thought", "final": {...}}.
+    stats = {'concerns': {'oiliness': {'verdict': 'better'}}, 'harm': []}
+    answers = [{'thought': 'Look.', 'tool': 'trial_stats'},
+               {'headline': 'Less shine.', 'next': '', 'claims': [],
+                'concerns': [{'concern': 'oiliness', 'verdict': 'better', 'text': ''}]}]
+
+    class Model:
+        def complete(self, system, prompt, image=None):
+            import json
+            return json.dumps(answers.pop(0))
+
+    v = agent.verdict(Model(), {'status': 'running', 'hours_in': 8, 'plan': {}, 'stats': stats}, lambda job, step: None)
+    assert v['headline'] == 'Less shine.'
+
+
+def test_the_verdict_checks_only_the_products_own_claims():
+    stats = {'concerns': {'oiliness': {'verdict': 'better'}}, 'harm': []}
+    plan = {'claims': [{'text': 'Controls shine for up to 8 hours', 'concern': 'oiliness'}]}
+    concerns = [{'concern': 'oiliness', 'verdict': 'better', 'text': ''}]
+    answers = [{'thought': 'Guess.', 'final': {'headline': '', 'next': '', 'concerns': concerns,
+                                               'claims': [{'claim': 'Reduces redness', 'result': 'too early'}]}},
+               {'thought': 'From context.', 'final': {'headline': '', 'next': '', 'concerns': concerns,
+                                                      'claims': [{'claim': 'Controls shine for up to 8 hours.', 'result': 'supported'}]}}]
+
+    class Model:
+        def complete(self, system, prompt, image=None):
+            import json
+            return json.dumps(answers.pop(0))
+
+    steps = []
+    v = agent.verdict(Model(), {'status': 'running', 'hours_in': 8, 'plan': plan, 'stats': stats}, lambda job, step: steps.append(step))
+    assert v['claims'][0]['result'] == 'supported'
+    assert 'Controls shine' in steps[0]['rejected']

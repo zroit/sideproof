@@ -56,6 +56,11 @@ numbers. YouCam keeps uploaded files for 30 days under its own retention policy.
   `/docs`), `face.py` the photo checks and the per-half measurement, `trial.py` the trial
   math, `agent.py` the agent, `llm.py` the model providers, `admin.py` the dashboard.
 - `app/` Flutter, one codebase for Android and the web.
+- `backend/demo/demo_trial.json` the demo trial the app opens without spending units: numbers
+  only, recorded by `backend/scripts/record_demo.py` through the real API (YouCam Skin
+  Analysis, the Gemini agent, the trial math) on YouCam's own sample face. Two things are
+  staged: the product is a digital matte filter on the treated half, and the clock moves
+  forward between scans.
 
 ## Run it
 

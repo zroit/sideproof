@@ -11,7 +11,8 @@ from . import trial
 ROLE = ('You are the HalfFace trial agent. A person tests a skincare product on one half of '
         'their face; the other half is the control. YouCam Skin AI measures both halves. '
         'Be plain, brief and honest: "too early to tell" is a good answer. Never diagnose. '
-        'Write in English.')
+        'Use only numbers that the context or a tool gave; add no times, dates or figures of '
+        'your own. Write in English.')
 
 PROTOCOL = ('Answer with ONE JSON object and nothing else.\n'
             'To use a tool: {"thought": "<one short sentence>", "tool": "<name>", "args": {}}\n'
@@ -61,11 +62,13 @@ def run(provider, job, task, context, tools, validate, log, image=None, max_step
     for _ in range(max_steps):
         reply = llms.parse_json(provider.complete(system, '\n\n'.join(transcript), image))
         transcript.append('YOU: ' + json.dumps(reply))
-        if 'final' in reply:
-            problem = validate(reply['final'], seen)
-            log(job, {'thought': reply.get('thought'), 'final': reply['final'], 'rejected': problem})
+        if 'tool' not in reply:
+            # Some models drop the {"final": ...} wrapper; anything that is not a tool call is an answer.
+            final = reply['final'] if isinstance(reply.get('final'), dict) else {k: v for k, v in reply.items() if k != 'thought'}
+            problem = validate(final, seen)
+            log(job, {'thought': reply.get('thought'), 'final': final, 'rejected': problem})
             if not problem:
-                return reply['final']
+                return final
             transcript.append('REJECTED: ' + problem + ' Answer again.')
             continue
         name = reply.get('tool')
@@ -139,17 +142,21 @@ def next_step(provider, state, allowed, log):
         if not message or len(message) > 600:
             return 'message must be 1 to 600 characters.'
         bad = unsupported_numbers(message, seen)
-        return f'these numbers are not in the tool results: {bad}.' if bad else None
+        return f'these numbers are not in the tool results: {bad}. Leave them out rather than change them.' if bad else None
 
     context = {'status': state['status'], 'hours_in': state['hours_in'], 'allowed_actions': allowed}
     return run(provider, 'next_step', task, context, tools, validate, log)
 
 
 def verdict(provider, state, log):
-    task = ('Write the trial verdict. For each measured concern, say what happened on the '
-            'treated side compared with the control, using the verdict trial_stats gives '
-            '(better, worse, unclear) without changing it. Then check each claim of the '
-            'product: supported, not supported, not measured, or too early. Final: '
+    task = ('Write the trial verdict. CONTEXT.results has each measured concern\'s verdict '
+            '(better, worse, unclear); keep it unchanged, and make each concern\'s text agree '
+            'with it: better means the treated half improved past the noise, unclear means no '
+            'change beyond the noise yet. trial_stats has the scans if you need them. The '
+            'headline is one sentence with the main result. Then check each claim in '
+            'CONTEXT.claims, copying its text exactly into "claim": supported (its concern is better and the '
+            'trial has run as long as the claim says), not supported (worse, or unclear after '
+            'that long), not measured (no concern for it), or too early. Final: '
             '{"headline": str, "concerns": [{"concern": str, "verdict": str, "text": str}], '
             '"claims": [{"claim": str, "result": str}], "next": str}')
     tools = {
@@ -159,8 +166,13 @@ def verdict(provider, state, log):
     }
     truth = {c: s.get('verdict', 'unclear') for c, s in state['stats']['concerns'].items()}
     names = {**{c: c for c in truth}, **{trial.CATALOG[c][0].lower(): c for c in truth}}
+    claims = [str(c.get('text', '')) for c in state['plan'].get('claims') or []]
+    plain = lambda text: re.sub(r'[^a-z0-9]+', ' ', str(text).lower()).strip()
 
     def validate(final, seen):
+        given = [str(c.get('claim', '')) for c in final.get('claims') or [] if isinstance(c, dict)]
+        if sorted(map(plain, given)) != sorted(map(plain, claims)):
+            return f'claims must be exactly the product\'s claims, once each: {claims}.'
         given = {}
         for item in final.get('concerns') or []:
             key = names.get(str(item.get('concern', '')).lower())
@@ -173,10 +185,13 @@ def verdict(provider, state, log):
         text = ' '.join([str(final.get('headline', '')), str(final.get('next', ''))] +
                         [str(i.get('text', '')) for i in final.get('concerns') or []])
         bad = unsupported_numbers(text, seen)
-        return f'these numbers are not in the tool results: {bad}.' if bad else None
+        return f'these numbers are not in the tool results: {bad}. Leave them out rather than change them.' if bad else None
 
-    context = {'status': state['status'], 'hours_in': state['hours_in']}
-    return run(provider, 'verdict', task, context, tools, validate, log)
+    results = {c: {k: s.get(k) for k in ('label', 'verdict', 'effect', 'threshold')}
+               for c, s in state['stats']['concerns'].items() if s.get('state') == 'measured'}
+    context = {'status': state['status'], 'hours_in': state['hours_in'], 'results': results,
+               'claims': [{'text': c.get('text'), 'concern': c.get('concern')} for c in state['plan'].get('claims') or []]}
+    return run(provider, 'verdict', task, context, tools, validate, log, max_steps=7)
 
 
 def audit(provider, product, listing, outcomes, log):
@@ -202,6 +217,6 @@ def audit(provider, product, listing, outcomes, log):
                 return f'"{item.get("claim")}": only {measured} trials measured {c}, so it is "not enough trials".'
         text = ' '.join(str(i.get('evidence', '')) for i in final.get('claims') or [])
         bad = unsupported_numbers(text, seen)
-        return f'these numbers are not in the tool results: {bad}.' if bad else None
+        return f'these numbers are not in the tool results: {bad}. Leave them out rather than change them.' if bad else None
 
     return run(provider, 'audit', task, {'product': product}, tools, validate, log)
