@@ -1,0 +1,115 @@
+"""The API flow with YouCam, the face checks and the model replaced by fakes."""
+import io
+import json
+
+import pytest
+from fastapi.testclient import TestClient
+from PIL import Image
+
+from halfface import api, config, face, llm
+
+DEV = {'X-Device': 'test-device-0123456789'}
+PHOTO = io.BytesIO()
+Image.new('RGB', (600, 800), (180, 150, 130)).save(PHOTO, 'JPEG')
+
+
+class FakeFace:
+    """Stands in for a found face: measure() returns the next queued side values."""
+    queue = []
+
+    def measure(self, masks):
+        return FakeFace.queue.pop(0)
+
+
+class FakeAnalysis:
+    def __init__(self, concerns):
+        self.raw = {c: 50.0 for c in concerns}
+        self.ui = {c: 70 for c in concerns}
+        self.masks = {}
+        self.overall, self.skin_age = 70.0, 30
+
+
+class ScriptedModel:
+    """Replies in order; records what it was asked."""
+    def __init__(self, replies):
+        self.replies, self.prompts = list(replies), []
+
+    def complete(self, system, prompt, image=None):
+        self.prompts.append(prompt)
+        return json.dumps(self.replies.pop(0))
+
+
+PLAN = {'product': 'Matte Gel', 'claims': [{'text': 'controls shine', 'concern': 'oiliness'}],
+        'concerns': ['oiliness'], 'days': 1, 'scan_every_hours': 2, 'patch_first': False,
+        'safe_to_try': True, 'cautions': [], 'summary': 'Check shine on the treated half for a day.'}
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, 'DB_PATH', str(tmp_path / 'test.db'))
+    monkeypatch.setattr(face, 'check', lambda img: (FakeFace(), [], {'yaw': 0.5}))
+    monkeypatch.setattr(api.youcam, 'analyze', lambda jpeg, concerns: FakeAnalysis(concerns))
+    monkeypatch.setattr(api.secrets, 'choice', lambda options: 'img_left')
+    return TestClient(api.app)
+
+
+def use_model(monkeypatch, replies):
+    model = ScriptedModel(replies)
+    monkeypatch.setattr(llm, 'get', lambda name: model)
+    return model
+
+
+def send_scan(client, tid, treated, control):
+    FakeFace.queue.append({'oiliness': {'img_left': treated, 'img_right': control}})
+    r = client.post(f'/api/trials/{tid}/scans', headers=DEV, files={'photo': ('p.jpg', PHOTO.getvalue(), 'image/jpeg')})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def test_a_whole_trial(client, monkeypatch):
+    model = use_model(monkeypatch, [
+        {'thought': 'Check the catalog.', 'tool': 'concern_catalog', 'args': {}},
+        {'thought': 'Shine is oiliness.', 'final': PLAN},
+    ])
+    t = client.post('/api/trials', headers=DEV, data={'product': 'Matte Gel', 'listing': 'Controls shine all day'}).json()
+    assert t['status'] == 'baseline' and t['treated_side'] == 'right'
+    assert [s['tool'] for s in t['agent_log'] if 'tool' in s] == ['concern_catalog']
+
+    assert client.post(f'/api/trials/{t["id"]}/start', headers=DEV).status_code == 409
+    send_scan(client, t['id'], 12.2, 9.6)
+    t = send_scan(client, t['id'], 12.4, 9.7)
+    assert 'right side only' in t['decision']['message']
+    assert client.post(f'/api/trials/{t["id"]}/start', headers=DEV).json()['status'] == 'running'
+
+    model.replies += [
+        {'thought': 'Look at the numbers.', 'tool': 'trial_stats', 'args': {}},
+        {'thought': 'Invented a number.', 'final': {'action': 'continue', 'message': 'Shine is down 60%.', 'next_scan_in_hours': 2}},
+        {'thought': 'Fixed.', 'final': {'action': 'continue', 'message': 'Shine on the treated side is down well past the noise. Scan again in 2 hours.', 'next_scan_in_hours': 2}},
+    ]
+    assert send_scan(client, t['id'], 5.0, 9.9)['decision']['state'] == 'thinking'
+    t = client.get(f'/api/trials/{t["id"]}', headers=DEV).json()     # the agent ran after the reply
+    assert t['decision']['action'] == 'continue'
+    assert any(s.get('rejected') for s in t['agent_log'])
+    assert t['stats']['concerns']['oiliness']['verdict'] == 'better'
+
+    model.replies += [{'thought': 'Write it.', 'final': {
+        'headline': 'The gel cut shine on the treated half.',
+        'concerns': [{'concern': 'oiliness', 'verdict': 'better', 'text': 'Less shine than the control half.'}],
+        'claims': [{'claim': 'controls shine', 'result': 'supported'}], 'next': 'Use it on both sides.'}}]
+    t = client.post(f'/api/trials/{t["id"]}/verdict', headers=DEV).json()
+    assert t['status'] == 'done' and t['verdict']['claims'][0]['result'] == 'supported'
+
+
+def test_a_bad_photo_costs_nothing(client, monkeypatch):
+    use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
+    t = client.post('/api/trials', headers=DEV, data={'product': 'Matte Gel'}).json()
+    monkeypatch.setattr(face, 'check', lambda img: (None, ['uneven_light'], {}))
+    r = client.post(f'/api/trials/{t["id"]}/scans', headers=DEV, files={'photo': ('p.jpg', PHOTO.getvalue(), 'image/jpeg')}).json()
+    assert r['issues'] == ['uneven_light']
+    assert client.get(f'/api/trials/{t["id"]}', headers=DEV).json()['scans'] == []
+
+
+def test_another_device_cannot_read_a_trial(client, monkeypatch):
+    use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
+    t = client.post('/api/trials', headers=DEV, data={'product': 'Matte Gel'}).json()
+    assert client.get(f'/api/trials/{t["id"]}', headers={'X-Device': 'someone-else-0123456789'}).status_code == 404
