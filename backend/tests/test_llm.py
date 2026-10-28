@@ -61,3 +61,13 @@ def test_gemini_says_when_the_daily_quota_is_gone_everywhere(monkeypatch):
     g, _ = gemini_with(monkeypatch, [Answer(429, daily), Answer(429, daily)])
     with pytest.raises(llm.LLMError, match="quota is used up"):
         g.complete('sys', 'hi')
+
+
+def test_claude_cli_without_claude_code_is_an_agent_error_not_a_crash(monkeypatch):
+    def missing(*_, **__):
+        raise FileNotFoundError('claude')
+    monkeypatch.setattr(llm.subprocess, 'run', missing)
+    with pytest.raises(llm.LLMError, match='not installed'):
+        llm.ClaudeCli().complete('sys', 'hi')
+    monkeypatch.setattr(llm.shutil, 'which', lambda _: None)
+    assert 'claude-cli' not in llm.available()

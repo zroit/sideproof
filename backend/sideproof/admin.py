@@ -168,7 +168,7 @@ def home(con, base, read_only):
     trow = ''.join(f'<tr><td><code>{r["id"]}</code></td><td>{html.escape(r["product"])}</td><td>{r["status"]}</td>'
                    f'<td>{r["skin_type"] or "-"}</td><td>{r["n"]}</td><td class="mute">{time.strftime("%b %d %H:%M", time.localtime(r["created_at"]))}</td></tr>'
                    for r in recent)
-    options = ''.join(f'<option {"selected" if name == prov else ""}>{name}</option>' for name in llm.PROVIDERS)
+    options = ''.join(f'<option {"selected" if name == prov else ""}>{name}</option>' for name in llm.available())
     fitz = db.setting(con, 'fitzpatrick')
     settings = (f'<div class="card">Agent model <b>{prov}</b> · daily unit cap <b>{cap}</b> · skin type (Fitzpatrick) <b>{fitz}</b></div>'
                 if read_only else f'''<form class="card inline" method="post" action="/admin/settings">
@@ -193,7 +193,7 @@ def home(con, base, read_only):
 
 @router.post('/settings', dependencies=[Depends(authed)])
 def save_settings(llm_provider: str = Form(...), daily_unit_cap: int = Form(...), fitzpatrick: str = Form(...), con=Depends(get_db)):
-    if llm_provider not in llm.PROVIDERS or fitzpatrick not in ('on', 'off') or daily_unit_cap < 0:
+    if llm_provider not in llm.available() or fitzpatrick not in ('on', 'off') or daily_unit_cap < 0:
         raise HTTPException(422, 'bad setting')
     for k, v in (('llm_provider', llm_provider), ('daily_unit_cap', str(daily_unit_cap)), ('fitzpatrick', fitzpatrick)):
         con.execute('insert into settings (key, value) values (?, ?) on conflict(key) do update set value = excluded.value', (k, v))

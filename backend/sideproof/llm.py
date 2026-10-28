@@ -9,6 +9,7 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import tempfile
 import time
@@ -40,7 +41,12 @@ class ClaudeCli:
                 args += ['--tools', 'Read', '--allowedTools', 'Read']
             else:
                 args += ['--tools', '']
-            run = subprocess.run(args, input=prompt, capture_output=True, text=True, cwd=tmp, timeout=180)
+            try:
+                run = subprocess.run(args, input=prompt, capture_output=True, text=True, cwd=tmp, timeout=180)
+            except FileNotFoundError:
+                raise LLMError('claude-cli: Claude Code is not installed on this server')
+            except subprocess.TimeoutExpired:
+                raise LLMError('claude-cli: no answer in 3 minutes')
         try:
             out = json.loads(run.stdout)
         except ValueError:
@@ -119,6 +125,11 @@ class DeepSeek:
 
 
 PROVIDERS = {p.name: p for p in (ClaudeCli, Gemini, DeepSeek)}
+
+
+def available():
+    """The providers this server can run: claude-cli only where Claude Code is installed."""
+    return [name for name in PROVIDERS if name != 'claude-cli' or shutil.which('claude')]
 
 
 def get(name):
