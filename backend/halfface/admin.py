@@ -1,5 +1,6 @@
 """Owner and shop dashboard: settings, unit budget, products with trial links, what the trials
-measured per product and per skin type, and the claim audit. Served only on the admin host."""
+measured per product and per skin type, and the claim audit. /admin is served only on the admin
+host; /dashboard is the same pages read-only, on any host, for a view token (judges, a shop)."""
 import html
 import json
 import os
@@ -13,7 +14,9 @@ from . import agent, config, db, llm, trial
 from .youcam import YouCamError
 
 router = APIRouter(prefix='/admin', include_in_schema=False)
+view = APIRouter(prefix='/dashboard', include_in_schema=False)
 COOKIE = 'hf_admin'
+VIEW_COOKIE = 'hf_view'
 PUBLIC_URL = os.environ.get('HALFFACE_PUBLIC_URL', '')
 ADMIN_HOST = os.environ.get('HALFFACE_ADMIN_HOST', '')
 
@@ -31,12 +34,20 @@ def gate(request: Request):
         raise HTTPException(404)
 
 
+def signed_in(request, cookie, secret_name, base):
+    token = config.secret(secret_name)
+    given = request.cookies.get(cookie, '')
+    if not token or not secrets.compare_digest(given, token):
+        raise HTTPException(303, headers={'Location': base + '/login'})
+
+
 def authed(request: Request):
     gate(request)
-    token = config.secret('HALFFACE_ADMIN_TOKEN')
-    given = request.cookies.get(COOKIE, '')
-    if not token or not secrets.compare_digest(given, token):
-        raise HTTPException(303, headers={'Location': '/admin/login'})
+    signed_in(request, COOKIE, 'HALFFACE_ADMIN_TOKEN', '/admin')
+
+
+def viewer(request: Request):
+    signed_in(request, VIEW_COOKIE, 'HALFFACE_VIEW_TOKEN', '/dashboard')
 
 
 def outcomes(con, code):
@@ -93,26 +104,53 @@ def counts_cell(counts):
     return f'{bar(counts)}<div class="mute">{counts["better"]} better · {counts["unclear"]} unclear · {counts["worse"]} worse</div>'
 
 
-@router.get('/login')
-def login_form(request: Request):
-    gate(request)
-    return page('HalfFace admin', '<h1>HalfFace admin</h1><form class="card" method="post" action="/admin/login">'
-                '<label>Admin token<input name="token" type="password" autofocus></label><p><button>Sign in</button></p></form>')
+def login_form(title, base, label):
+    return page(title, f'<h1>{title}</h1><form class="card" method="post" action="{base}/login">'
+                f'<label>{label}<input name="token" type="password" autofocus></label><p><button>Sign in</button></p></form>')
 
 
-@router.post('/login')
-def login(request: Request, token: str = Form(...)):
-    gate(request)
-    real = config.secret('HALFFACE_ADMIN_TOKEN')
+def sign_in(request, token, cookie, secret_name, base):
+    real = config.secret(secret_name)
     if not real or not secrets.compare_digest(token, real):
         raise HTTPException(403, 'wrong token')
-    r = RedirectResponse('/admin', 303)
-    r.set_cookie(COOKIE, token, httponly=True, samesite='strict', secure=request.url.scheme == 'https', max_age=30 * 86400)
+    r = RedirectResponse(base, 303)
+    r.set_cookie(cookie, token, httponly=True, samesite='strict', secure=request.url.scheme == 'https', max_age=30 * 86400)
     return r
 
 
+@router.get('/login')
+def admin_login_form(request: Request):
+    gate(request)
+    return login_form('HalfFace admin', '/admin', 'Admin token')
+
+
+@router.post('/login')
+def admin_login(request: Request, token: str = Form(...)):
+    gate(request)
+    return sign_in(request, token, COOKIE, 'HALFFACE_ADMIN_TOKEN', '/admin')
+
+
+@view.get('/login')
+def view_login_form():
+    return login_form('HalfFace dashboard', '/dashboard', 'Access token')
+
+
+@view.post('/login')
+def view_login(request: Request, token: str = Form(...)):
+    return sign_in(request, token, VIEW_COOKIE, 'HALFFACE_VIEW_TOKEN', '/dashboard')
+
+
 @router.get('', dependencies=[Depends(authed)])
-def home(con=Depends(get_db)):
+def admin_home(con=Depends(get_db)):
+    return home(con, '/admin', read_only=False)
+
+
+@view.get('', dependencies=[Depends(viewer)])
+def view_home(con=Depends(get_db)):
+    return home(con, '/dashboard', read_only=True)
+
+
+def home(con, base, read_only):
     from .api import youcam
     try:
         balance = f'{youcam.credit():.0f}'
@@ -125,27 +163,32 @@ def home(con=Depends(get_db)):
     recent = con.execute("select t.*, (select count(*) from scans s where s.trial_id = t.id) n from trials t "
                          "where device != 'demo' order by created_at desc limit 20").fetchall()
 
-    prow = ''.join(f'<tr><td><a href="/admin/p/{p["code"]}">{html.escape(p["name"])}</a><div class="mute">{html.escape(p["shop"] or "")}</div></td>'
+    prow = ''.join(f'<tr><td><a href="{base}/p/{p["code"]}">{html.escape(p["name"])}</a><div class="mute">{html.escape(p["shop"] or "")}</div></td>'
                    f'<td><code>{p["code"]}</code></td><td>{outcomes(con, p["code"])["trials"]}</td></tr>' for p in products)
     trow = ''.join(f'<tr><td><code>{r["id"]}</code></td><td>{html.escape(r["product"])}</td><td>{r["status"]}</td>'
                    f'<td>{r["skin_type"] or "-"}</td><td>{r["n"]}</td><td class="mute">{time.strftime("%b %d %H:%M", time.localtime(r["created_at"]))}</td></tr>'
                    for r in recent)
     options = ''.join(f'<option {"selected" if name == prov else ""}>{name}</option>' for name in llm.PROVIDERS)
-    body = f'''<h1>HalfFace</h1><p class="mute">Split-face product trials on YouCam Skin AI. Numbers only: no photo is kept.</p>
+    fitz = db.setting(con, 'fitzpatrick')
+    settings = (f'<div class="card">Agent model <b>{prov}</b> · daily unit cap <b>{cap}</b> · skin type (Fitzpatrick) <b>{fitz}</b></div>'
+                if read_only else f'''<form class="card inline" method="post" action="/admin/settings">
+<label>Agent model<select name="llm_provider">{options}</select></label>
+<label>Daily unit cap<input name="daily_unit_cap" type="number" min="0" value="{cap}"></label>
+<label>Skin type (Fitzpatrick, 10 units per trial)<select name="fitzpatrick"><option {"selected" if fitz == "on" else ""}>on</option><option {"selected" if fitz == "off" else ""}>off</option></select></label>
+<button>Save</button></form>''')
+    add_product = '' if read_only else '''<form class="inline" method="post" action="/admin/products" style="margin-top:14px">
+<label>Shop<input name="shop" required></label><label>Product<input name="name" required></label>
+<label style="flex-basis:100%">Listing text (the claims as the shop sells it)<textarea name="listing" rows="3" required></textarea></label><button>Add product</button></form>'''
+    note = ' Read-only view.' if read_only else ''
+    body = f'''<h1>HalfFace</h1><p class="mute">Split-face product trials on YouCam Skin AI. Numbers only: no photo is kept.{note}</p>
 <div class="row"><div class="card"><div class="mute">YouCam units left</div><div class="big">{balance}</div></div>
 <div class="card"><div class="mute">Used in the last 24 h</div><div class="big">{used} / {cap}</div></div>
 <div class="card"><div class="mute">Trials</div><div class="big">{n_trials}</div></div></div>
-<h2>Settings</h2><form class="card inline" method="post" action="/admin/settings">
-<label>Agent model<select name="llm_provider">{options}</select></label>
-<label>Daily unit cap<input name="daily_unit_cap" type="number" min="0" value="{cap}"></label>
-<label>Skin type (Fitzpatrick, 10 units per trial)<select name="fitzpatrick"><option {"selected" if db.setting(con, "fitzpatrick") == "on" else ""}>on</option><option {"selected" if db.setting(con, "fitzpatrick") == "off" else ""}>off</option></select></label>
-<button>Save</button></form>
+<h2>Settings</h2>{settings}
 <h2>Products</h2><div class="card"><table><tr><th>Product</th><th>Trial code</th><th>Trials</th></tr>{prow or '<tr><td colspan=3 class="mute">None yet.</td></tr>'}</table>
-<form class="inline" method="post" action="/admin/products" style="margin-top:14px">
-<label>Shop<input name="shop" required></label><label>Product<input name="name" required></label>
-<label style="flex-basis:100%">Listing text (the claims as the shop sells it)<textarea name="listing" rows="3" required></textarea></label><button>Add product</button></form></div>
+{add_product}</div>
 <h2>Recent trials</h2><div class="card"><table><tr><th>Trial</th><th>Product</th><th>Status</th><th>Skin type</th><th>Scans</th><th>Started</th></tr>{trow or '<tr><td colspan=6 class="mute">None yet.</td></tr>'}</table></div>'''
-    return page('HalfFace admin', body)
+    return page('HalfFace dashboard' if read_only else 'HalfFace admin', body)
 
 
 @router.post('/settings', dependencies=[Depends(authed)])
@@ -169,7 +212,16 @@ def add_product(shop: str = Form(..., max_length=80), name: str = Form(..., max_
 
 
 @router.get('/p/{code}', dependencies=[Depends(authed)])
-def product_page(code: str, con=Depends(get_db)):
+def admin_product(code: str, con=Depends(get_db)):
+    return product_page(con, code, '/admin', read_only=False)
+
+
+@view.get('/p/{code}', dependencies=[Depends(viewer)])
+def view_product(code: str, con=Depends(get_db)):
+    return product_page(con, code, '/dashboard', read_only=True)
+
+
+def product_page(con, code, base, read_only):
     p = con.execute('select * from products where code = ?', (code,)).fetchone()
     if not p:
         raise HTTPException(404)
@@ -187,7 +239,11 @@ def product_page(code: str, con=Depends(get_db)):
                              f'<td class="mute">{html.escape(a.get("evidence", ""))}</td></tr>' for a in audit.get('claims', []))
         audit_html = (f'<table><tr><th>Claim</th><th>Status</th><th>Evidence</th></tr>{audit_html}</table>'
                       f'<p><b>Wording the evidence supports:</b> {html.escape(audit.get("suggested_wording", ""))}</p>')
-    body = f'''<p><a href="/admin">← All products</a></p><h1>{html.escape(p["name"])}</h1><p class="mute">{html.escape(p["shop"] or "")} · code <code>{code}</code></p>
+    if read_only:
+        audit_button = '' if audit else '<p class="mute">Not run yet.</p>'
+    else:
+        audit_button = f'<form method="post" action="/admin/p/{code}/audit"><button>{"Run again" if audit else "Run claim audit"}</button></form>'
+    body = f'''<p><a href="{base}">← All products</a></p><h1>{html.escape(p["name"])}</h1><p class="mute">{html.escape(p["shop"] or "")} · code <code>{code}</code></p>
 <div class="card"><div class="mute">Trial link for the sample pack or the product page</div><code>{html.escape(link)}</code>
 <div class="mute" style="margin-top:8px">Embed</div><code>{html.escape(f'<iframe src="{link}" width="420" height="760" allow="camera"></iframe>')}</code></div>
 <div class="row"><div class="card"><div class="mute">Trials</div><div class="big">{o["trials"]}</div></div>
@@ -196,7 +252,7 @@ def product_page(code: str, con=Depends(get_db)):
 <h2>What the trials measured</h2><div class="card"><table><tr><th>Concern</th><th>Treated half vs control half</th></tr>{rows or '<tr><td colspan=2 class="mute">No measured trials yet.</td></tr>'}</table></div>
 <h2>By skin type (Fitzpatrick)</h2><div class="card"><table><tr><th>Concern</th>{''.join(f'<th>Type {t}</th>' for t in types)}</tr>{type_rows}</table></div>
 <h2>Claim audit</h2><div class="card"><p class="mute">The agent checks each claim in the listing against these trials.</p>{audit_html}
-<form method="post" action="/admin/p/{code}/audit"><button>{"Run again" if audit else "Run claim audit"}</button></form></div>
+{audit_button}</div>
 <h2>Listing</h2><div class="card mute">{html.escape(p["listing"] or "")}</div>'''
     return page(p['name'], body)
 

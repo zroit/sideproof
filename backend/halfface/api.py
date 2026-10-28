@@ -257,6 +257,7 @@ def write_verdict(trial_id: str, dev=Depends(device), con=Depends(get_db)):
 
 
 app.include_router(admin.router)
+app.include_router(admin.view)
 WEB_DIR = os.environ.get('HALFFACE_WEB_DIR', '')
 if WEB_DIR and os.path.isdir(WEB_DIR):     # the Flutter web build, served from the same host
     app.mount('/', StaticFiles(directory=WEB_DIR, html=True), name='web')

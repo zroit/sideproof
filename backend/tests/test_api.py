@@ -142,3 +142,22 @@ def test_a_shop_sees_its_trials_and_the_claim_audit(client, monkeypatch):
         {'thought': 'Honest.', 'final': {'claims': [{'claim': 'Controls shine all day', 'concern': 'oiliness', 'status': 'not enough trials', 'evidence': '1 trial so far, better'}], 'suggested_wording': 'Early trials show less shine.'}},
     ]
     assert 'not enough trials' in client.post(f'/admin/p/{code}/audit').text
+
+
+def test_the_view_token_reads_the_dashboard_but_changes_nothing(client, monkeypatch):
+    monkeypatch.setenv('HALFFACE_ADMIN_TOKEN', 'admin-token-for-tests')
+    monkeypatch.setenv('HALFFACE_VIEW_TOKEN', 'view-token-for-tests')
+    client.post('/admin/login', data={'token': 'admin-token-for-tests'})
+    code = client.post('/admin/products', data={'shop': 'Glow Lab', 'name': 'Matte Gel', 'listing': 'x'}).url.path.rsplit('/', 1)[1]
+    client.cookies.clear()
+
+    assert client.get('/dashboard', follow_redirects=False).headers['location'] == '/dashboard/login'
+    assert client.post('/dashboard/login', data={'token': 'admin-token-for-tests'}).status_code == 403
+    client.post('/dashboard/login', data={'token': 'view-token-for-tests'})
+    home = client.get('/dashboard').text
+    assert 'Matte Gel' in home and f'href="/dashboard/p/{code}"' in home
+    assert '<form' not in home and '<form' not in client.get(f'/dashboard/p/{code}').text
+    for path, data in (('/admin', None), ('/admin/settings', {'llm_provider': 'gemini', 'daily_unit_cap': 0, 'fitzpatrick': 'off'}),
+                       ('/admin/products', {'shop': 'a', 'name': 'b', 'listing': 'c'}), (f'/admin/p/{code}/audit', {})):
+        r = client.post(path, data=data, follow_redirects=False) if data is not None else client.get(path, follow_redirects=False)
+        assert r.headers['location'] == '/admin/login'

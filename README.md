@@ -67,12 +67,15 @@ Backend:
     export YOUCAM_API_KEY=...            # or YOUCAM_API_KEY_FILE=/path/to/file
     export HALFFACE_LLM=gemini GEMINI_API_KEY=...   # or deepseek / claude-cli
     export HALFFACE_ADMIN_TOKEN=...      # the dashboard at /admin
+    export HALFFACE_VIEW_TOKEN=...       # the same dashboard read-only, at /dashboard
     .venv/bin/uvicorn halfface.api:app --port 8000
     .venv/bin/pytest
 
 Other settings: `HALFFACE_DB` (SQLite path), `HALFFACE_WEB_DIR` (serve the Flutter web build
-from the same host), `HALFFACE_PUBLIC_URL` (for trial links), `HALFFACE_ADMIN_HOST` (serve the
-dashboard only on that host name).
+from the same host), `HALFFACE_PUBLIC_URL` (for trial links), `HALFFACE_ADMIN_HOST` (serve
+`/admin` only on that host name; `/dashboard` stays on every host), `GEMINI_MODEL` (default
+`gemini-3.5-flash`). Each key can also come from a file through `NAME_FILE`; the file holds
+the bare key or `NAME=value` lines.
 
 App:
 
