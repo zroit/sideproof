@@ -1,0 +1,7 @@
+**/.venv
+**/__pycache__
+**/*.db*
+backend/tests
+app/.dart_tool
+app/build
+.git

@@ -52,7 +52,8 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(api.youcam, 'analyze', lambda jpeg, concerns: FakeAnalysis(concerns))
     monkeypatch.setattr(api.youcam, 'fitzpatrick', lambda file_id: 'V')
     monkeypatch.setattr(api.secrets, 'choice', lambda options: 'img_left')
-    return TestClient(api.app)
+    with TestClient(api.app) as c:      # runs the app's startup, as uvicorn does
+        yield c
 
 
 def use_model(monkeypatch, replies):
@@ -124,6 +125,7 @@ def test_a_shop_sees_its_trials_and_the_claim_audit(client, monkeypatch):
     r = client.post('/admin/products', data={'shop': 'Glow Lab', 'name': 'Matte Gel', 'listing': 'Controls shine all day.'})
     code = r.url.path.rsplit('/', 1)[1]
     assert client.get(f'/api/products/{code}').json()['name'] == 'Matte Gel'
+    assert f'href="/?product={code}"' in client.get(f'/shop/{code}').text
 
     use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
     t = client.post('/api/trials', headers=DEV, data={'code': code}).json()

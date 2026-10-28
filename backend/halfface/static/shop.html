@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{name} · {shop}</title>
+<!-- An example shop page (a made-up brand) showing where a HalfFace trial link sits. -->
+<style>
+:root{--bg:#fbf8f4;--ink:#22201d;--mute:#77706a;--line:#e8e1d8;--accent:#7a4bd0}
+@media (prefers-color-scheme:dark){:root{--bg:#161514;--ink:#efebe6;--mute:#a59e96;--line:#34302c}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}
+header{border-bottom:1px solid var(--line);padding:14px 16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+main{max-width:920px;margin:0 auto;padding:24px 16px 64px;display:grid;gap:28px;grid-template-columns:1fr}
+@media (min-width:760px){main{grid-template-columns:1fr 1fr}}
+.shot{aspect-ratio:1;border-radius:18px;background:radial-gradient(circle at 50% 38%,#efe6da,#d9cbbb);display:grid;place-items:center}
+.tube{width:34%;height:62%;border-radius:22px 22px 10px 10px;background:linear-gradient(90deg,#fff,#efe9e2);box-shadow:0 18px 40px #0002;display:grid;place-items:center;text-align:center;font-size:12px;color:#5b534b;padding:10px}
+h1{font-size:30px;line-height:1.15;margin:4px 0 8px}.mute{color:var(--mute)}.price{font-size:20px;margin:10px 0 18px}
+.btn{display:block;text-align:center;padding:14px;border-radius:12px;text-decoration:none;font-weight:650}
+.buy{background:var(--ink);color:var(--bg)}.try{margin-top:10px;border:2px solid var(--accent);color:var(--accent)}
+.half{margin-top:18px;padding:14px;border:1px dashed var(--line);border-radius:12px;font-size:14px}
+ul{padding-left:18px}
+</style>
+</head>
+<body>
+<header>{shop}</header>
+<main>
+  <div class="shot"><div class="tube">{name}</div></div>
+  <div>
+    <div class="mute">Example product page</div>
+    <h1>{name}</h1>
+    <div class="price">BDT 1,250</div>
+    <p>{listing}</p>
+    <a class="btn buy" href="#">Add to cart</a>
+    <a class="btn try" href="{link}">Not sure? Test it on half your face</a>
+    <div class="half"><b>How the half-face test works.</b> Put the sample on one half of your face, keep the other half
+      as it is, and take a photo now and then. YouCam Skin AI measures both halves and tells you if this product did
+      anything for your skin, before you buy the full size.</div>
+  </div>
+</main>
+</body>
+</html>

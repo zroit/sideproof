@@ -1,5 +1,6 @@
 """HalfFace API: start a trial, add scans, read the result. Three calls are enough for a shop
 to put a split-face trial on its own page."""
+import html
 import json
 import os
 import secrets
@@ -8,9 +9,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import admin, agent, db, demo, face, llm, trial
+from . import admin, agent, config, db, demo, face, llm, trial
 from .youcam import YouCam, YouCamError, unit_cost
 
 @asynccontextmanager
@@ -215,8 +217,20 @@ def product(code: str, con=Depends(get_db)):
     return dict(p)
 
 
+@app.get('/shop/{code}', include_in_schema=False)
+def example_shop(code: str, con=Depends(get_db)):
+    """A made-up shop's product page with the trial link on it, to show where HalfFace sits."""
+    p = con.execute('select * from products where code = ?', (code,)).fetchone()
+    if not p:
+        raise HTTPException(404, 'unknown product code')
+    page = (config.HERE / 'static' / 'shop.html').read_text()
+    for key, value in (('name', p['name']), ('shop', p['shop'] or ''), ('listing', p['listing'] or ''), ('link', f'/?product={code}')):
+        page = page.replace('{' + key + '}', html.escape(value))
+    return HTMLResponse(page)
+
+
 @app.get('/api/demo')
-def demo(con=Depends(get_db)):
+def demo_trial(con=Depends(get_db)):
     """A finished trial to look around in. Costs no units."""
     t = con.execute("select id from trials where device = 'demo' order by created_at desc").fetchone()
     if not t:
