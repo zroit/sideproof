@@ -183,11 +183,12 @@ class GradientButton extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(99),
             onTap: onPressed,
-            child: SizedBox(
+            child: Container(
               height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 if (icon != null) ...[Icon(icon, color: Colors.white, size: 20), const SizedBox(width: 8)],
-                Text(label, style: body(16, weight: 800, color: Colors.white)),
+                Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: 800, color: Colors.white))),
               ]),
             ),
           ),
@@ -217,6 +218,41 @@ class ChromeBox extends StatelessWidget {
       );
 }
 
+/// A small label with a pearl-chrome border, for the YouCam APIs.
+class ChromeChip extends StatelessWidget {
+  const ChromeChip(this.label, {super.key});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(1.5),
+        decoration: BoxDecoration(gradient: Sp.chrome, borderRadius: BorderRadius.circular(99)),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(color: Sp.cream, borderRadius: BorderRadius.circular(99)),
+          child: Text(label, style: body(12.5, weight: 700, color: Sp.ink)),
+        ),
+      );
+}
+
+/// A heading with one word in italic colour, as in "What *YouCam* saw".
+class AccentTitle extends StatelessWidget {
+  const AccentTitle(this.before, this.word, this.after, {super.key, this.color = Sp.rose, this.size = 28});
+  final String before, word, after;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Text.rich(TextSpan(
+        style: display(size, color: Sp.ink, height: 1.1),
+        children: [
+          TextSpan(text: before),
+          TextSpan(text: word, style: display(size, color: color, height: 1.1, italic: true)),
+          TextSpan(text: after),
+        ],
+      ));
+}
+
 /// Text painted in the shimmer gradient.
 class ShimmerText extends StatelessWidget {
   const ShimmerText(this.text, {super.key, required this.style});
@@ -227,7 +263,11 @@ class ShimmerText extends StatelessWidget {
   Widget build(BuildContext context) => ShaderMask(
         blendMode: BlendMode.srcIn,
         shaderCallback: (r) => Sp.shimmer.createShader(r),
-        child: Text(text, style: style),
+        // Room for an italic's last letter, which leans past the text box and would miss the mask.
+        child: Padding(
+          padding: EdgeInsets.only(right: style.fontStyle == FontStyle.italic ? (style.fontSize ?? 14) * 0.02 : 0),
+          child: Text(text, style: style),
+        ),
       );
 }
 

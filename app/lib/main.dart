@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -80,17 +82,31 @@ class _HomeScreenState extends State<HomeScreen> {
               const Spacer(),
               TextButton(onPressed: () => _open(const ExplainerScreen()), child: const Text('How it works')),
             ]),
-            const SizedBox(height: 16),
-            Text('Did it work, or was it the weather?', style: text.headlineMedium),
-            const SizedBox(height: 10),
+            const SizedBox(height: 18),
+            Text.rich(TextSpan(style: display(40, color: Sp.ink), children: [
+              const TextSpan(text: 'Did it '),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: ShimmerText('work', style: display(40, color: Sp.ink, italic: true)),
+              ),
+              const TextSpan(text: ', or was it the weather?'),
+            ])),
+            const SizedBox(height: 12),
             Text(
               'Put a skincare product on one half of your face and leave the other half alone. '
               'YouCam Skin AI measures both halves, so whatever differs is the product.',
-              style: text.bodyLarge?.copyWith(height: 1.45, color: scheme.onSurfaceVariant),
+              style: text.bodyLarge?.copyWith(height: 1.5, color: scheme.onSurfaceVariant),
             ),
-            const SizedBox(height: 18),
-            FilledButton.icon(onPressed: _startTrial, icon: const Icon(Icons.add), label: const Text('Start a trial')),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+            GradientButton(onPressed: _startTrial, icon: Icons.add, label: 'Start a trial'),
+            const SizedBox(height: 16),
+            const Wrap(spacing: 8, runSpacing: 8, children: [
+              ChromeChip('YouCam AI Skin Analysis'),
+              ChromeChip('AI Skin Simulation'),
+              ChromeChip('AI Fitzpatrick Skin Type'),
+            ]),
+            const SizedBox(height: 28),
             FutureBuilder<List<Trial>>(
               future: _demos,
               builder: (context, snap) {
@@ -222,13 +238,23 @@ class _DemoShowcase extends StatelessWidget {
       if (photos['latest'] != null)
         GestureDetector(
           onTap: () => onOpen(d.id),
-          child: SplitPhoto(
-            key: ValueKey(d.id),
-            photo: NetworkImage(url(photos['latest'])),
-            overlay: shown == null ? null : NetworkImage(url(overlays[shown['concern']])),
-            midline: midline,
-            treatedLeft: d.treatedOnImageLeft,
-            labels: last == null ? null : ('Control ${(last['control'] as num).toStringAsFixed(1)}%', 'Treated ${(last['treated'] as num).toStringAsFixed(1)}%'),
+          // The demo photos are 3:4, so the card holds its place while they load.
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: AspectRatio(
+              aspectRatio: 3 / 4,
+              child: Stack(fit: StackFit.expand, children: [
+                const ColoredBox(color: Sp.sunk),
+                SplitPhoto(
+                  key: ValueKey(d.id),
+                  photo: NetworkImage(url(photos['latest'])),
+                  overlay: shown == null ? null : NetworkImage(url(overlays[shown['concern']])),
+                  midline: midline,
+                  treatedLeft: d.treatedOnImageLeft,
+                ),
+                if (shown != null && last != null) Positioned(left: 12, right: 12, bottom: 12, child: _GlassResult(key: ValueKey('glass-${d.id}'), stats: shown, last: last)),
+              ]),
+            ),
           ),
         ),
       const SizedBox(height: 8),
@@ -239,8 +265,8 @@ class _DemoShowcase extends StatelessWidget {
       const SizedBox(height: 10),
       OutlinedButton(onPressed: () => onOpen(d.id), child: const Text('Open this trial')),
       if (pphotos['promise'] != null && pphotos['baseline'] != null) ...[
-        const SizedBox(height: 28),
-        Text('The promise, then the proof', style: text.titleLarge),
+        const SizedBox(height: 30),
+        const AccentTitle('The ', 'promise', ', then the proof', color: Sp.lilac),
         const SizedBox(height: 6),
         Text('YouCam AI Skin Simulation draws what the claims promise on this face. Drag to compare.', style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4)),
         const SizedBox(height: 10),
@@ -267,6 +293,55 @@ class _DemoShowcase extends StatelessWidget {
         ],
       ],
     ]);
+  }
+}
+
+/// The hero's result on frosted glass: how much less of the concern the treated half has, the
+/// verdict, and each half's share. It slides up from the photo's edge once.
+class _GlassResult extends StatelessWidget {
+  const _GlassResult({super.key, required this.stats, required this.last});
+  final Map<String, dynamic> stats, last;
+
+  @override
+  Widget build(BuildContext context) {
+    final control = (last['control'] as num).toDouble(), treated = (last['treated'] as num).toDouble();
+    final label = stats['label'] as String;
+    final headline = stats['verdict'] == 'better' && control > 0 ? '${((1 - treated / control) * 100).round()}% less ${label.toLowerCase()}' : label;
+    Widget half(String text, bool isTreated) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(color: isTreated ? null : Sp.sunk, gradient: isTreated ? Sp.cta : null, borderRadius: BorderRadius.circular(12)),
+          child: Text(text, style: body(12.5, weight: 700, color: isTreated ? Colors.white : Sp.ink)),
+        );
+    final still = MediaQuery.of(context).disableAnimations;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: still ? 1 : 0, end: 1),
+      duration: const Duration(milliseconds: 1100),
+      curve: const Interval(0.35, 1, curve: Curves.easeOutCubic),
+      builder: (context, v, child) => FractionalTranslation(translation: Offset(0, 1.4 * (1 - v)), child: child),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            color: Colors.white.withValues(alpha: 0.84),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(children: [
+                Expanded(child: Text(headline, style: display(26, color: Sp.ink, height: 1))),
+                const SizedBox(width: 8),
+                VerdictChip(stats['verdict']),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: half('Control ${control.toStringAsFixed(1)}%', false)),
+                const SizedBox(width: 6),
+                Expanded(child: half('Treated ${treated.toStringAsFixed(1)}%', true)),
+              ]),
+            ]),
+          ),
+        ),
+      ),
+    );
   }
 }
 

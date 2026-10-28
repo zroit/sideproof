@@ -56,8 +56,8 @@ class HalfShade extends StatelessWidget {
               alignment: imageLeft ? const Alignment(-0.5, 0.86) : const Alignment(0.5, 0.86),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(99)),
-                child: Text('Product here', style: TextStyle(color: scheme.onPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+                decoration: BoxDecoration(gradient: Sp.cta, borderRadius: BorderRadius.circular(99)),
+                child: Text('Product here', style: body(12, weight: 700, color: Colors.white)),
               ),
             ),
           ]),
@@ -69,6 +69,7 @@ class HalfShade extends StatelessWidget {
 
 /// One concern over time: the treated half minus the control half, after the face's own
 /// asymmetry is taken out. The band is the noise; points below it mean less of the concern.
+/// The line draws itself in once, left to right.
 class EffectChart extends StatelessWidget {
   const EffectChart({super.key, required this.stats, this.compact = false});
   final Map<String, dynamic> stats;
@@ -76,18 +77,23 @@ class EffectChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final still = MediaQuery.of(context).disableAnimations;
     return SizedBox(
       height: compact ? 96 : 160,
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _EffectPainter(
-          series: List<Map<String, dynamic>>.from(stats['series'] ?? []),
-          threshold: (stats['threshold'] as num?)?.toDouble() ?? 1,
-          band: scheme.surfaceContainerHighest,
-          treated: Sp.treated(context),
-          mute: scheme.outline,
-          compact: compact,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: still ? 1 : 0, end: 1),
+        duration: const Duration(milliseconds: 1600),
+        curve: Curves.easeInOutCubic,
+        builder: (context, drawn, _) => CustomPaint(
+          size: Size.infinite,
+          painter: _EffectPainter(
+            series: List<Map<String, dynamic>>.from(stats['series'] ?? []),
+            threshold: (stats['threshold'] as num?)?.toDouble() ?? 1,
+            treated: Sp.treated(context),
+            mute: Sp.outline,
+            compact: compact,
+            drawn: drawn,
+          ),
         ),
       ),
     );
@@ -95,11 +101,14 @@ class EffectChart extends StatelessWidget {
 }
 
 class _EffectPainter extends CustomPainter {
-  _EffectPainter({required this.series, required this.threshold, required this.band, required this.treated, required this.mute, required this.compact});
+  _EffectPainter({required this.series, required this.threshold, required this.treated, required this.mute, required this.compact, required this.drawn});
+
+  static const band = Color(0xFFF3E8E4);
+  static const line = LinearGradient(colors: [Color(0xFFF48FB1), Color(0xFFE3507E), Color(0xFFB467E0)], stops: [0, 0.5, 1]);
 
   final List<Map<String, dynamic>> series;
-  final double threshold;
-  final Color band, treated, mute;
+  final double threshold, drawn;
+  final Color treated, mute;
   final bool compact;
 
   @override
@@ -114,7 +123,7 @@ class _EffectPainter extends CustomPainter {
     double x(double hr) => left + 8 + hr / maxH * (w - 16);
     double y(double e) => h / 2 - e / span * (h / 2 - 6);
 
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(left, y(threshold), size.width, y(-threshold)), const Radius.circular(8)), Paint()..color = band);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(left, y(threshold), size.width, y(-threshold)), const Radius.circular(11)), Paint()..color = band);
     canvas.drawLine(Offset(left, y(0)), Offset(size.width, y(0)), Paint()
       ..color = mute.withValues(alpha: 0.5)
       ..strokeWidth = 1);
@@ -126,25 +135,33 @@ class _EffectPainter extends CustomPainter {
       _text(canvas, '${maxH.toStringAsFixed(0)} h', Offset(size.width - 28, h + 4), mute);
     }
 
-    final line = Path();
+    final path = Path();
     for (var i = 0; i < series.length; i++) {
       final o = Offset(x(hours[i]), y(effects[i]));
-      i == 0 ? line.moveTo(o.dx, o.dy) : line.lineTo(o.dx, o.dy);
+      i == 0 ? path.moveTo(o.dx, o.dy) : path.lineTo(o.dx, o.dy);
     }
-    canvas.drawPath(line, Paint()
-      ..color = treated.withValues(alpha: 0.55)
+    final shown = Path();
+    for (final m in path.computeMetrics()) {
+      shown.addPath(m.extractPath(0, m.length * drawn), Offset.zero);
+    }
+    canvas.drawPath(shown, Paint()
+      ..shader = line.createShader(Rect.fromLTRB(left, 0, size.width, h))
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
+      ..strokeWidth = compact ? 3 : 4
+      ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round);
+    final reach = left + 8 + drawn * (w - 16);
     for (var i = 0; i < series.length; i++) {
       final baseline = series[i]['phase'] == 'baseline';
       final at = Offset(x(hours[i]), y(effects[i]));
-      canvas.drawCircle(at, 5, Paint()..color = baseline ? mute : treated);
+      if (at.dx > reach + 0.5) continue;
+      canvas.drawCircle(at, compact ? 5 : 6, Paint()..color = baseline ? mute : treated);
+      if (!baseline) canvas.drawCircle(at, compact ? 2 : 2.4, Paint()..color = Colors.white);
     }
   }
 
   void _text(Canvas canvas, String s, Offset at, Color color) {
-    (TextPainter(text: TextSpan(text: s, style: TextStyle(fontSize: 11, color: color)), textDirection: TextDirection.ltr)..layout()).paint(canvas, at);
+    (TextPainter(text: TextSpan(text: s, style: body(11, weight: 700, color: color)), textDirection: TextDirection.ltr)..layout()).paint(canvas, at);
   }
 
   @override
@@ -156,20 +173,102 @@ class VerdictChip extends StatelessWidget {
   final String? verdict;
 
   @override
+  Widget build(BuildContext context) => ResultPill(
+        switch (verdict) {
+          'better' => 'Better',
+          'worse' => 'Worse',
+          'unclear' => 'Too early to tell',
+          _ => 'Waiting for scans',
+        },
+        verdict,
+      );
+}
+
+/// A result in its colour: green for better, amber for too early, red for worse, with a tick
+/// when it came out better.
+class ResultPill extends StatelessWidget {
+  const ResultPill(this.label, this.verdict, {super.key});
+  final String label;
+  final String? verdict;
+
+  @override
   Widget build(BuildContext context) {
-    final label = switch (verdict) {
-      'better' => 'Better',
-      'worse' => 'Worse',
-      'unclear' => 'Too early to tell',
-      _ => 'Waiting for scans',
-    };
-    final color = Sp.verdict(verdict, context);
+    final color = verdict == null ? Sp.muted : Sp.verdict(verdict, context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(99)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+      decoration: BoxDecoration(color: Sp.verdictBg(verdict), borderRadius: BorderRadius.circular(99)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (verdict == 'better') ...[Icon(Icons.check_rounded, size: 14, color: color), const SizedBox(width: 4)],
+        Flexible(child: Text(label, style: body(12.5, weight: 800, color: color))),
+      ]),
     );
   }
+}
+
+/// How far a concern moved, as a ring: the effect in multiples of the noise threshold. A full
+/// sweep is 4 times the threshold; a result inside the noise stays a short arc.
+class VerdictRing extends StatelessWidget {
+  const VerdictRing({super.key, this.effect, this.threshold, this.verdict, this.size = 104});
+  final double? effect, threshold;
+  final String? verdict;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = threshold ?? 0;
+    final ratio = effect != null && t > 0 ? effect!.abs() / t : 0.0;
+    final share = max(0.04, min(1.0, ratio / 4));
+    final colors = switch (verdict) {
+      'worse' => const [Color(0xFFF2A08F), Color(0xFFB23A2E)],
+      'better' => const [Color(0xFFF48FB1), Color(0xFFB467E0)],
+      _ => const [Color(0xFFF7C98E), Color(0xFFD9893A)],
+    };
+    final still = MediaQuery.of(context).disableAnimations;
+    return Semantics(
+      label: 'The change is ${ratio.toStringAsFixed(1)} times the noise',
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: still ? share : 0, end: share),
+        duration: const Duration(milliseconds: 1400),
+        curve: const Cubic(0.2, 0.8, 0.2, 1),
+        builder: (context, sweep, _) => CustomPaint(
+          size: Size.square(size),
+          painter: _RingPainter(sweep, colors),
+          child: SizedBox.square(
+            dimension: size,
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text('${ratio.toStringAsFixed(1)}\u00d7', style: display(size * 0.28, color: Sp.ink, height: 1)),
+              const SizedBox(height: 3),
+              Text(ratio >= 1 ? 'past the noise' : 'of the noise', style: body(size * 0.088, weight: 700, color: Sp.muted)),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter(this.sweep, this.colors);
+  final double sweep;
+  final List<Color> colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = size.shortestSide * 12 / 112;
+    final rect = Rect.fromCircle(center: size.center(Offset.zero), radius: size.shortestSide / 2 - stroke / 2 - 2);
+    canvas.drawCircle(rect.center, rect.width / 2, Paint()
+      ..color = const Color(0xFFF3E8E4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke);
+    canvas.drawArc(rect, -pi / 2, 2 * pi * sweep, false, Paint()
+      ..shader = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter old) => old.sweep != sweep || old.colors != colors;
 }
 
 /// Where the trial is: baseline photos, product on, scans, verdict.
@@ -182,6 +281,14 @@ class TrialTimeline extends StatelessWidget {
 
   static const _names = ['Baseline', 'Product on', 'Scans', 'Verdict'];
 
+  /// Together the four bars run pink, rose, lilac, mint.
+  static const _bars = [
+    [Color(0xFFF48FB1), Color(0xFFE3507E)],
+    [Color(0xFFE3507E), Color(0xFFC25BC8)],
+    [Color(0xFFC25BC8), Color(0xFF8C6BE8)],
+    [Color(0xFF8C6BE8), Color(0xFF3BB8A3)],
+  ];
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -191,16 +298,20 @@ class TrialTimeline extends StatelessWidget {
       for (var i = 0; i < _names.length; i++)
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              height: 6,
-              margin: const EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                color: i < step || finished ? scheme.primary : i == step ? scheme.primary.withValues(alpha: 0.45) : scheme.outlineVariant,
-                borderRadius: BorderRadius.circular(3),
+            Opacity(
+              opacity: i == step && !finished ? 0.5 : 1,
+              child: Container(
+                height: 7,
+                margin: const EdgeInsets.only(right: 5),
+                decoration: BoxDecoration(
+                  color: i <= step || finished ? null : Sp.line,
+                  gradient: i <= step || finished ? LinearGradient(colors: _bars[i]) : null,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(_names[i], style: text.labelMedium?.copyWith(fontWeight: i == step ? FontWeight.w700 : FontWeight.w500, color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant)),
+            const SizedBox(height: 7),
+            Text(_names[i], style: body(12.5, weight: i == step ? 800 : 700, color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant)),
             if (i < notes.length && notes[i].isNotEmpty) Text(notes[i], style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
           ]),
         ),
@@ -264,7 +375,7 @@ class PhotoTips extends StatelessWidget {
         for (final (icon, title, sub) in _tips)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: Sp.sunk, borderRadius: BorderRadius.circular(18)),
             child: Row(children: [
               Icon(icon, size: 22, color: scheme.primary),
               const SizedBox(width: 8),
@@ -335,9 +446,13 @@ class SplitPhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     final cobalt = Sp.treated(context);
     Widget pill(String text, bool treated) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(color: treated ? cobalt : Colors.white.withValues(alpha: 0.88), borderRadius: BorderRadius.circular(99)),
-          child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: treated ? Theme.of(context).colorScheme.onPrimary : Sp.ink)),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          decoration: BoxDecoration(
+            color: treated ? null : Colors.white.withValues(alpha: 0.9),
+            gradient: treated ? Sp.cta : null,
+            borderRadius: BorderRadius.circular(99),
+          ),
+          child: Text(text, style: body(12, weight: 800, color: treated ? Colors.white : Sp.ink)),
         );
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
@@ -351,7 +466,7 @@ class SplitPhoto extends StatelessWidget {
           Positioned(
             left: 10,
             right: 10,
-            bottom: 10,
+            top: 10,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               textDirection: treatedLeft ? TextDirection.rtl : TextDirection.ltr,
@@ -462,7 +577,7 @@ class _CompareSliderState extends State<CompareSlider> with SingleTickerProvider
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(color: right ? Sp.lilac : Colors.white.withValues(alpha: 0.88), borderRadius: BorderRadius.circular(99)),
-            child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: right ? Colors.white : Sp.ink)),
+            child: Text(text, style: body(12, weight: 800, color: right ? Colors.white : Sp.ink)),
           ),
         );
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

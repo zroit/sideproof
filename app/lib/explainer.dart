@@ -73,14 +73,15 @@ class _ExplainerScreenState extends State<ExplainerScreen> {
                     width: i == _page ? 22 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: i == _page ? scheme.primary : scheme.outlineVariant,
+                      color: i == _page ? null : scheme.outlineVariant,
+                      gradient: i == _page ? Sp.cta : null,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 const Spacer(),
                 SizedBox(
                   width: 150,
-                  child: FilledButton(onPressed: _next, child: Text(_page < _steps.length - 1 ? 'Next' : widget.doneLabel)),
+                  child: GradientButton(onPressed: _next, label: _page < _steps.length - 1 ? 'Next' : widget.doneLabel),
                 ),
               ]),
             ),

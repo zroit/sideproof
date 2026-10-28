@@ -106,7 +106,12 @@ class _NewTrialScreenState extends State<NewTrialScreen> {
                       ),
                       const SizedBox(height: 20),
                     ] else ...[
-                      Text('What are you testing?', style: text.headlineSmall),
+                      const AccentTitle(
+                        'What are you ',
+                        'testing',
+                        '?',
+                        size: 30,
+                      ),
                       const SizedBox(height: 6),
                       Text(
                         'Give the agent the claims, typed or as a photo of the label.',
@@ -197,11 +202,11 @@ class _NewTrialScreenState extends State<NewTrialScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    FilledButton(
+                    GradientButton(
                       onPressed: shop != null || widget.code == null
                           ? _submit
                           : null,
-                      child: const Text('Plan my trial'),
+                      label: 'Plan my trial',
                     ),
                     if (_error != null)
                       Container(

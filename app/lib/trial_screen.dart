@@ -380,10 +380,10 @@ class _TrialScreenState extends State<TrialScreen> {
         const SizedBox(height: 14),
         const PhotoTips(),
         const SizedBox(height: 16),
-        FilledButton.icon(
+        GradientButton(
           onPressed: _scan,
-          icon: const Icon(Icons.photo_camera_outlined),
-          label: const Text('Take baseline photo'),
+          icon: Icons.photo_camera_outlined,
+          label: 'Take baseline photo',
         ),
       ]);
     } else if (t.canStart) {
@@ -423,10 +423,10 @@ class _TrialScreenState extends State<TrialScreen> {
             ),
           ),
         const SizedBox(height: 16),
-        FilledButton(
+        GradientButton(
           onPressed: () =>
               _run('Starting the trial', () => widget.api.start(t.id)),
-          child: const Text('It\'s on: start the trial'),
+          label: 'It\'s on: start the trial',
         ),
       ]);
     } else if (t.status == 'running' || t.status == 'concluding') {
@@ -436,12 +436,20 @@ class _TrialScreenState extends State<TrialScreen> {
             Container(
               width: 34,
               height: 34,
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.12),
+              decoration: const BoxDecoration(
+                gradient: Sp.cta,
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: Color(0xFFFBE3EC), spreadRadius: 6),
+                ],
               ),
-              child: Icon(Icons.auto_awesome, size: 18, color: scheme.primary),
+              child: const Icon(
+                Icons.auto_awesome,
+                size: 18,
+                color: Colors.white,
+              ),
             ),
+            const SizedBox(width: 4),
             const SizedBox(width: 10),
             Text('Your trial agent', style: text.titleMedium),
           ],
@@ -465,10 +473,10 @@ class _TrialScreenState extends State<TrialScreen> {
           children: [
             Expanded(
               flex: 3,
-              child: FilledButton.icon(
+              child: GradientButton(
                 onPressed: _scan,
-                icon: const Icon(Icons.photo_camera_outlined),
-                label: const Text('Take a scan'),
+                icon: Icons.photo_camera_outlined,
+                label: 'Take a scan',
               ),
             ),
             const SizedBox(width: 10),
@@ -516,17 +524,8 @@ class _TrialScreenState extends State<TrialScreen> {
       );
     }
     if (children.isEmpty) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: scheme.primary.withValues(alpha: 0.35),
-          width: 1.5,
-        ),
-      ),
+    return ChromeBox(
+      radius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
@@ -583,7 +582,7 @@ class _TrialScreenState extends State<TrialScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('What YouCam saw', style: text.titleLarge),
+          const AccentTitle('What ', 'YouCam', ' saw'),
           const SizedBox(height: 6),
           Text(
             'YouCam AI Skin Analysis returns a map for each concern. SideProof splits it at the midline and measures each half.',
@@ -602,7 +601,7 @@ class _TrialScreenState extends State<TrialScreen> {
           ),
           if (promise != null && baseline != null) ...[
             const SizedBox(height: 22),
-            Text('The promise', style: text.titleMedium),
+            const AccentTitle('The ', 'promise', '', color: Sp.lilac, size: 24),
             const SizedBox(height: 6),
             Text(
               'YouCam AI Skin Simulation on the treated half: what the claims would look like before any product went on.',
@@ -624,45 +623,78 @@ class _TrialScreenState extends State<TrialScreen> {
     );
   }
 
+  /// The concern the verdict ring shows: a claimed one that was measured, the one that moved
+  /// most past its noise.
+  Map<String, dynamic>? _lead(Trial t) {
+    final claimed = [
+      for (final c in t.plan['claims'] ?? const [])
+        if (c['concern'] != null) c['concern'] as String,
+    ];
+    double moved(Map c) =>
+        ((c['effect'] as num?) ?? 0).abs() /
+        ((c['threshold'] as num?) ?? 1).toDouble();
+    final measured =
+        t.concerns.values
+            .map((c) => c as Map<String, dynamic>)
+            .where((c) => c['state'] == 'measured')
+            .toList()
+          ..sort((a, b) => moved(b).compareTo(moved(a)));
+    return measured.where((c) => claimed.contains(c['concern'])).firstOrNull ??
+        measured.firstOrNull;
+  }
+
   Widget _verdictCard(Trial t) {
     final v = t.verdict!;
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final overall = _overall(t);
-    Color claimColor(String r) => r.startsWith('supported')
-        ? Sp.better
+    final lead = _lead(t);
+    String claimVerdict(String r) => r.startsWith('supported')
+        ? 'better'
         : r.startsWith('not supported')
-        ? Sp.worse
-        : scheme.outline;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(24),
-      ),
+        ? 'worse'
+        : 'unclear';
+    return ChromeBox(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              VerdictDisc(verdict: overall, size: 56),
-              const SizedBox(width: 14),
+              VerdictRing(
+                effect: (lead?['effect'] as num?)?.toDouble(),
+                threshold: (lead?['threshold'] as num?)?.toDouble(),
+                verdict: lead?['verdict'] ?? overall,
+              ),
+              const SizedBox(width: 16),
               Expanded(
-                child: Text(v['headline'] ?? '', style: text.titleLarge),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    VerdictChip(overall),
+                    const SizedBox(height: 8),
+                    Text(
+                      v['headline'] ?? '',
+                      style: display(24, color: Sp.ink, height: 1.1),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
           if ((v['claims'] as List?)?.isNotEmpty == true) ...[
-            const SizedBox(height: 16),
-            Text('The claims', style: text.titleMedium),
-            const SizedBox(height: 6),
+            const SizedBox(height: 14),
             for (final c in v['claims'])
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Sp.sunk,
+                  borderRadius: BorderRadius.circular(18),
+                ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 3,
@@ -677,23 +709,11 @@ class _TrialScreenState extends State<TrialScreen> {
                     const SizedBox(width: 10),
                     Flexible(
                       flex: 2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: claimColor('${c['result']}')
-                              .withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Text(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: ResultPill(
                           '${c['result']}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: claimColor('${c['result']}'),
-                          ),
+                          claimVerdict('${c['result']}'),
                         ),
                       ),
                     ),
@@ -702,7 +722,7 @@ class _TrialScreenState extends State<TrialScreen> {
               ),
           ],
           if ((v['next'] ?? '').toString().isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             Text(
               v['next'],
               style: text.bodyMedium?.copyWith(
@@ -831,14 +851,7 @@ class _Pill extends StatelessWidget {
             Icon(icon, size: 14, color: scheme.onSurfaceVariant),
             const SizedBox(width: 5),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface,
-            ),
-          ),
+          Text(label, style: body(13, weight: 700, color: scheme.onSurface)),
         ],
       ),
     );
