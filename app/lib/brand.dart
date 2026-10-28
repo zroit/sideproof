@@ -4,49 +4,58 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-/// The mark: a disc split down the middle. The filled half had the product; the outlined half
-/// is the control.
+/// The mark: a face split down the middle. The filled half had the product, the outlined half is
+/// the control; a closed eye on each. The same geometry as the web's 32x32 SVG.
 class SideProofMark extends StatelessWidget {
-  const SideProofMark({super.key, this.size = 28});
+  const SideProofMark({super.key, this.size = 28, this.light = false});
   final double size;
+  final bool light; // white, for a coloured background
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-        size: Size.square(size),
-        painter: _MarkPainter(Sp.treated(context), Theme.of(context).colorScheme.onSurface),
-      );
+  Widget build(BuildContext context) => CustomPaint(size: Size.square(size), painter: _MarkPainter(light));
 }
 
 class _MarkPainter extends CustomPainter {
-  _MarkPainter(this.fill, this.ink);
-  final Color fill, ink;
+  _MarkPainter(this.light);
+  final bool light;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final s = size.shortestSide;
-    final stroke = s * 0.09, gap = s * 0.08;
-    final r = s / 2 - stroke / 2;
-    final c = size.center(Offset.zero);
-    canvas.drawPath(
-      Path()
-        ..addArc(Rect.fromCircle(center: c.translate(-gap / 2, 0), radius: r + stroke / 2), pi / 2, pi)
-        ..close(),
-      Paint()..color = fill,
-    );
-    canvas.drawPath(
-      Path()
-        ..addArc(Rect.fromCircle(center: c.translate(gap / 2, 0), radius: r), -pi / 2, pi)
-        ..close(),
-      Paint()
-        ..color = ink
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..strokeJoin = StrokeJoin.round,
-    );
+    final k = size.shortestSide / 32;
+    canvas.save();
+    canvas.scale(k);
+    final left = Path()
+      ..moveTo(15, 2.6)
+      ..cubicTo(8.6, 3, 4.8, 8.3, 4.8, 14.6)
+      ..cubicTo(4.8, 21.6, 9.2, 27.6, 15, 29.5)
+      ..close();
+    final right = Path()
+      ..moveTo(17.2, 3.9)
+      ..cubicTo(22.6, 4.8, 25.8, 9.3, 25.8, 14.6)
+      ..cubicTo(25.8, 20.6, 22.3, 25.6, 17.2, 27.8)
+      ..close();
+    final ink = light ? Colors.white : Sp.ink;
+    canvas.drawPath(left, Paint()..shader = light ? null : const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF48FB1), Color(0xFFE3507E), Color(0xFFB467E0)], stops: [0, .55, 1]).createShader(const Rect.fromLTWH(0, 0, 32, 32))
+      ..color = light ? Colors.white : Sp.rose);
+    canvas.drawPath(right, Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeJoin = StrokeJoin.round);
+    Path eye(double x) => Path()
+      ..moveTo(x, 13.4)
+      ..cubicTo(x + 0.8, 14.2, x + 2.2, 14.2, x + 3, 13.4);
+    final lid = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(eye(9.6), lid..color = light ? Sp.rose : Sp.cream);
+    canvas.drawPath(eye(19.6), lid..color = ink);
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant _MarkPainter old) => old.fill != fill || old.ink != ink;
+  bool shouldRepaint(covariant _MarkPainter old) => old.light != light;
 }
 
 class Wordmark extends StatelessWidget {
@@ -55,9 +64,9 @@ class Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
-        SideProofMark(size: size * 1.15),
+        SideProofMark(size: size * 1.2),
         SizedBox(width: size * 0.4),
-        Text('SideProof', style: display(size, color: Theme.of(context).colorScheme.onSurface)),
+        Text('SideProof', style: display(size * 1.3, color: Sp.ink)),
       ]);
 }
 

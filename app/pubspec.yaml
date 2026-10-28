@@ -21,6 +21,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   fonts:
-    - family: Bricolage
+    - family: InstrumentSerif
       fonts:
-        - asset: assets/fonts/BricolageGrotesque.ttf
+        - asset: assets/fonts/InstrumentSerif-Regular.ttf
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          style: italic
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf

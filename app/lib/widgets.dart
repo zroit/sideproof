@@ -461,7 +461,7 @@ class _CompareSliderState extends State<CompareSlider> with SingleTickerProvider
           right: right ? 10 : null,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: right ? Sp.cobalt : Colors.white.withValues(alpha: 0.88), borderRadius: BorderRadius.circular(99)),
+            decoration: BoxDecoration(color: right ? Sp.lilac : Colors.white.withValues(alpha: 0.88), borderRadius: BorderRadius.circular(99)),
             child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: right ? Colors.white : Sp.ink)),
           ),
         );
