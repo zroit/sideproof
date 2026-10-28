@@ -1,0 +1,53 @@
+{
+ "treated": "img_right",
+ "midline": [
+  [
+   0.5183,
+   0.0
+  ],
+  [
+   0.507,
+   1.0
+  ]
+ ],
+ "photos": {
+  "baseline": "baseline.jpg",
+  "latest": "latest.jpg",
+  "promise": "promise.jpg"
+ },
+ "overlays": {
+  "baseline": {
+   "oiliness": "baseline-oiliness.png",
+   "moisture": "baseline-moisture.png"
+  },
+  "latest": {
+   "oiliness": "latest-oiliness.png",
+   "moisture": "latest-moisture.png"
+  }
+ },
+ "sides": {
+  "baseline": {
+   "oiliness": {
+    "img_left": 12.783,
+    "img_right": 9.961
+   },
+   "moisture": {
+    "img_left": 48.929,
+    "img_right": 46.07
+   }
+  },
+  "latest": {
+   "oiliness": {
+    "img_left": 12.284,
+    "img_right": 7.239
+   },
+   "moisture": {
+    "img_left": 49.136,
+    "img_right": 45.444
+   }
+  }
+ },
+ "promise_concerns": [
+  "oiliness"
+ ]
+}

@@ -263,13 +263,21 @@ def example_shop(code: str, con=Depends(get_db)):
     return HTMLResponse(page)
 
 
+DEMO_MEDIA = demo.DEMO_FILE.parent / 'media'
+
+
 @app.get('/api/demo')
 def demo_trial(con=Depends(get_db)):
-    """A finished trial to look around in. Costs no units."""
+    """A finished trial to look around in. Costs no units. Its pictures (YouCam's sample face,
+    YouCam's masks, the simulated promise) are under /demo-media."""
     t = con.execute("select id from trials where device = 'demo' order by created_at desc").fetchone()
     if not t:
         raise HTTPException(404, 'no demo trial loaded')
-    return view(con, db.trial_row(con, t['id']))
+    out = view(con, db.trial_row(con, t['id']))
+    manifest = DEMO_MEDIA / 'manifest.json'
+    if manifest.exists():
+        out['media'] = json.loads(manifest.read_text())
+    return out
 
 
 @app.post('/api/trials/{trial_id}/verdict')
@@ -290,6 +298,8 @@ def write_verdict(trial_id: str, dev=Depends(device), con=Depends(get_db)):
     return view(con, db.trial_row(con, trial_id))
 
 
+if DEMO_MEDIA.is_dir():
+    app.mount('/demo-media', StaticFiles(directory=DEMO_MEDIA), name='demo-media')
 app.include_router(admin.router)
 app.include_router(admin.view)
 WEB_DIR = os.environ.get('SIDEPROOF_WEB_DIR', '')

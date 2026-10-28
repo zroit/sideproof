@@ -183,7 +183,7 @@ def overlays(masks, width=480):
     for concern, alpha in masks.items():
         h, w = alpha.shape
         size = (width, max(1, round(h * width / w)))
-        a = Image.fromarray((np.clip(alpha, 0, 1) * 200).astype(np.uint8)).resize(size, Image.BILINEAR)
+        a = Image.fromarray((np.clip(alpha, 0, 1) * 115).astype(np.uint8)).resize(size, Image.BILINEAR)
         rgb = Image.new('RGB', size, OVERLAY_COLOURS.get(concern, (47, 91, 234)))
         rgb.putalpha(a)
         buf = io.BytesIO()
