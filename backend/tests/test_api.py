@@ -27,6 +27,7 @@ class FakeAnalysis:
         self.ui = {c: 70 for c in concerns}
         self.masks = {}
         self.overall, self.skin_age = 70.0, 30
+        self.file_id = 'file-1'
 
 
 class ScriptedModel:
@@ -49,6 +50,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(config, 'DB_PATH', str(tmp_path / 'test.db'))
     monkeypatch.setattr(face, 'check', lambda img: (FakeFace(), [], {'yaw': 0.5}))
     monkeypatch.setattr(api.youcam, 'analyze', lambda jpeg, concerns: FakeAnalysis(concerns))
+    monkeypatch.setattr(api.youcam, 'fitzpatrick', lambda file_id: 'V')
     monkeypatch.setattr(api.secrets, 'choice', lambda options: 'img_left')
     return TestClient(api.app)
 
@@ -76,7 +78,7 @@ def test_a_whole_trial(client, monkeypatch):
     assert [s['tool'] for s in t['agent_log'] if 'tool' in s] == ['concern_catalog']
 
     assert client.post(f'/api/trials/{t["id"]}/start', headers=DEV).status_code == 409
-    send_scan(client, t['id'], 12.2, 9.6)
+    assert send_scan(client, t['id'], 12.2, 9.6)['skin_type'] == 'V'
     t = send_scan(client, t['id'], 12.4, 9.7)
     assert 'right side only' in t['decision']['message']
     assert client.post(f'/api/trials/{t["id"]}/start', headers=DEV).json()['status'] == 'running'
@@ -113,3 +115,28 @@ def test_another_device_cannot_read_a_trial(client, monkeypatch):
     use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
     t = client.post('/api/trials', headers=DEV, data={'product': 'Matte Gel'}).json()
     assert client.get(f'/api/trials/{t["id"]}', headers={'X-Device': 'someone-else-0123456789'}).status_code == 404
+
+
+def test_a_shop_sees_its_trials_and_the_claim_audit(client, monkeypatch):
+    monkeypatch.setenv('HALFFACE_ADMIN_TOKEN', 'admin-token-for-tests')
+    assert client.get('/admin', follow_redirects=False).headers['location'] == '/admin/login'
+    client.post('/admin/login', data={'token': 'admin-token-for-tests'})
+    r = client.post('/admin/products', data={'shop': 'Glow Lab', 'name': 'Matte Gel', 'listing': 'Controls shine all day.'})
+    code = r.url.path.rsplit('/', 1)[1]
+    assert client.get(f'/api/products/{code}').json()['name'] == 'Matte Gel'
+
+    use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
+    t = client.post('/api/trials', headers=DEV, data={'code': code}).json()
+    for treated, control in ((12.2, 9.6), (12.4, 9.7)):
+        send_scan(client, t['id'], treated, control)
+    client.post(f'/api/trials/{t["id"]}/start', headers=DEV)
+    llm.get('x').replies += [{'thought': 'ok', 'final': {'action': 'continue', 'message': 'Keep going.', 'next_scan_in_hours': 2}}]
+    send_scan(client, t['id'], 5.0, 9.9)
+
+    page = client.get(f'/admin/p/{code}').text
+    assert '1 better' in page and 'Type V' in page
+    llm.get('x').replies += [
+        {'thought': 'Overclaim.', 'final': {'claims': [{'claim': 'Controls shine all day', 'concern': 'oiliness', 'status': 'backed', 'evidence': '1 of 1 trials better'}], 'suggested_wording': 'x'}},
+        {'thought': 'Honest.', 'final': {'claims': [{'claim': 'Controls shine all day', 'concern': 'oiliness', 'status': 'not enough trials', 'evidence': '1 trial so far, better'}], 'suggested_wording': 'Early trials show less shine.'}},
+    ]
+    assert 'not enough trials' in client.post(f'/admin/p/{code}/audit').text

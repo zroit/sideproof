@@ -9,10 +9,10 @@ from . import config
 SCHEMA = '''
 create table if not exists settings (key text primary key, value text);
 create table if not exists products (
-    code text primary key, shop text, name text, listing text, created_at real);
+    code text primary key, shop text, name text, listing text, audit text, created_at real);
 create table if not exists trials (
     id text primary key, device text, product text, code text, treated text,
-    plan text, status text, decision text, verdict text, created_at real, started_at real);
+    plan text, status text, decision text, verdict text, skin_type text, created_at real, started_at real);
 create table if not exists scans (
     id integer primary key, trial_id text, phase text, at real,
     checks text, sides text, scores text, units integer);
@@ -27,6 +27,7 @@ create index if not exists trials_device on trials (device);
 DEFAULTS = {
     'llm_provider': os.environ.get('HALFFACE_LLM', 'gemini'),
     'daily_unit_cap': '150',
+    'fitzpatrick': 'on',
 }
 
 

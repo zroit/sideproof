@@ -1,16 +1,27 @@
 """HalfFace API: start a trial, add scans, read the result. Three calls are enough for a shop
 to put a split-face trial on its own page."""
 import json
+import os
 import secrets
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from . import agent, db, face, llm, trial
+from . import admin, agent, db, demo, face, llm, trial
 from .youcam import YouCam, YouCamError, unit_cost
 
-app = FastAPI(title='HalfFace API', version='0.1.0', description=(
+@asynccontextmanager
+async def lifespan(_):
+    con = db.connect()
+    demo.load(con)
+    con.close()
+    yield
+
+
+app = FastAPI(title='HalfFace API', version='0.1.0', lifespan=lifespan, description=(
     'Split-face product trials on YouCam Skin AI. The product goes on one half of the face; '
     'the other half is the control. Photos are measured and dropped; only numbers are kept.'))
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=['*'])
@@ -47,7 +58,7 @@ def state(con, t):
 
 def view(con, t):
     scans, stats, hours_in = state(con, t)
-    return {**{k: t[k] for k in ('id', 'product', 'code', 'plan', 'status', 'decision', 'verdict', 'created_at', 'started_at')},
+    return {**{k: t[k] for k in ('id', 'product', 'code', 'plan', 'status', 'decision', 'verdict', 'skin_type', 'created_at', 'started_at')},
             'treated_side': PERSON_SIDE[t['treated']], 'hours_in': hours_in, 'stats': stats,
             'scans': [{k: s[k] for k in ('id', 'phase', 'at', 'checks')} for s in scans],
             'agent_log': db.log_of(con, t['id'])}
@@ -144,6 +155,13 @@ def add_scan(trial_id: str, background: BackgroundTasks, photo: UploadFile = Fil
     sides = found.measure(result.masks)
     del img, result.masks
     now = time.time()
+    if not t['skin_type'] and db.setting(con, 'fitzpatrick') == 'on' and db.units_today(con) + cost + 10 <= int(db.setting(con, 'daily_unit_cap')):
+        try:    # once per trial, on the photo YouCam already has: lets a brand see results per skin type
+            skin_type = youcam.fitzpatrick(result.file_id)
+            con.execute('update trials set skin_type = ? where id = ?', (skin_type, trial_id))
+            con.execute('insert into units (at, units, what) values (?, ?, ?)', (now, 10, 'fitzpatrick'))
+        except YouCamError:
+            pass
     phase = 'baseline' if t['status'] == 'baseline' else 'trial'
     con.execute('insert into scans (trial_id, phase, at, checks, sides, scores, units) values (?, ?, ?, ?, ?, ?, ?)',
                 (trial_id, phase, now, json.dumps(checks), json.dumps(sides),
@@ -188,6 +206,24 @@ def decide(trial_id, allowed):
         con.close()
 
 
+@app.get('/api/products/{code}')
+def product(code: str, con=Depends(get_db)):
+    """What a shop's trial link opens with."""
+    p = con.execute('select code, shop, name from products where code = ?', (code,)).fetchone()
+    if not p:
+        raise HTTPException(404, 'unknown product code')
+    return dict(p)
+
+
+@app.get('/api/demo')
+def demo(con=Depends(get_db)):
+    """A finished trial to look around in. Costs no units."""
+    t = con.execute("select id from trials where device = 'demo' order by created_at desc").fetchone()
+    if not t:
+        raise HTTPException(404, 'no demo trial loaded')
+    return view(con, db.trial_row(con, t['id']))
+
+
 @app.post('/api/trials/{trial_id}/verdict')
 def write_verdict(trial_id: str, dev=Depends(device), con=Depends(get_db)):
     """End the trial: the agent writes the verdict from the measured numbers."""
@@ -204,3 +240,9 @@ def write_verdict(trial_id: str, dev=Depends(device), con=Depends(get_db)):
                 (json.dumps(v), trial_id))
     con.commit()
     return view(con, db.trial_row(con, trial_id))
+
+
+app.include_router(admin.router)
+WEB_DIR = os.environ.get('HALFFACE_WEB_DIR', '')
+if WEB_DIR and os.path.isdir(WEB_DIR):     # the Flutter web build, served from the same host
+    app.mount('/', StaticFiles(directory=WEB_DIR, html=True), name='web')

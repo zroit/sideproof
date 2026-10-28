@@ -177,3 +177,31 @@ def verdict(provider, state, log):
 
     context = {'status': state['status'], 'hours_in': state['hours_in']}
     return run(provider, 'verdict', task, context, tools, validate, log)
+
+
+def audit(provider, product, listing, outcomes, log):
+    """Check a shop's listing claims against what its customers' trials measured."""
+    task = ('A shop sells this product. Check each claim in its listing against the anonymous '
+            'split-face trial outcomes of its customers (product_outcomes). For each claim give '
+            'the matching concern (or null) and a status: "backed" (most trials measuring it came '
+            'out better), "not backed" (most unclear or worse), "mixed", "not enough trials" '
+            '(fewer than 3 trials measured it), or "not measurable". Give the counts as evidence. '
+            'Then suggest listing wording the evidence supports. Final: {"claims": [{"claim": str, '
+            '"concern": str|null, "status": str, "evidence": str}], "suggested_wording": str}')
+    tools = {
+        'product_listing': ('the product name and the listing text the shop uses', lambda: {'product': product, 'listing': listing}),
+        'product_outcomes': ('per concern, how many trials came out better, unclear or worse; also by skin type', lambda: outcomes),
+    }
+
+    def validate(final, seen):
+        for item in final.get('claims') or []:
+            c = item.get('concern')
+            counts = outcomes['concerns'].get(c) if c else None
+            measured = sum(counts.values()) if counts else 0
+            if item.get('status') in ('backed', 'not backed', 'mixed') and measured < 3:
+                return f'"{item.get("claim")}": only {measured} trials measured {c}, so it is "not enough trials".'
+        text = ' '.join(str(i.get('evidence', '')) for i in final.get('claims') or [])
+        bad = unsupported_numbers(text, seen)
+        return f'these numbers are not in the tool results: {bad}.' if bad else None
+
+    return run(provider, 'audit', task, {'product': product}, tools, validate, log)
