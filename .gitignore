@@ -6,3 +6,4 @@ __pycache__/
 backend/models/*.task
 .env
 *.env
+backend/demo-recording-cache/

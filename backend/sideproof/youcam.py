@@ -88,7 +88,7 @@ class YouCam:
         """AI Skin Simulation: the photo with each concern improved by 0..1 (4 units for 1-4
         concerns). Returns JPEG bytes; nothing is kept here."""
         file_id = self.upload(jpeg)
-        data = self._task('/s2s/v2.0/task/skin-simulation', {'src_file_id': file_id, **settings})
+        data = self._task('/s2s/v2.0/task/skin-simulation', {'src_file_id': file_id, **settings}, timeout=300)
         results = data.get('results') or {}
         url = results.get('url') if isinstance(results, dict) else (results[0].get('url') if results else None)
         if not url:

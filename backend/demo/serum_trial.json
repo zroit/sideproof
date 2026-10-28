@@ -1,0 +1,145 @@
+{
+ "trials": [
+  {
+   "id": "359bmFjBjBGO",
+   "device": "demo",
+   "product": "Glow Serum",
+   "code": null,
+   "treated": "img_left",
+   "plan": "{\"product\": \"Glow Serum\", \"claims\": [{\"text\": \"Visibly brighter, more radiant skin in 7 days\", \"concern\": \"radiance\"}, {\"text\": \"Evens out dullness\", \"concern\": \"radiance\"}, {\"text\": \"Brightening for dull, tired-looking skin\", \"concern\": \"radiance\"}], \"concerns\": [\"radiance\"], \"days\": 1, \"scan_every_hours\": 4, \"patch_first\": false, \"safe_to_try\": true, \"cautions\": [\"No label photo was given, so only the ingredients named in the listing (niacinamide, licorice root) were checked. Read the full ingredient list before use.\", \"The listing promises results in 7 days, but radiance can change within hours, so a one-day test may be too early to judge the full claim.\"], \"summary\": \"Put the serum on one half of your face and leave the other half bare. Scan both halves before you start and again through the day; one day can show a quick change, but it may be too early to judge the 7-day claim.\"}",
+   "status": "done",
+   "decision": "{\"state\": \"done\", \"action\": \"extend\", \"message\": \"After the first day, the treated side looks about the same as the control: the effect is -0.1, well inside the noise threshold of 1.25, so there's no clear brightening yet. That is too early to tell, since the claim is for 7 days. Keep using the serum on one half only and scan again when the next one is due.\", \"next_scan_in_hours\": 4, \"allowed\": [\"conclude\", \"extend\"]}",
+   "verdict": "{\"headline\": \"Too early to tell: after 24 hours, the treated half shows no change in dullness beyond the noise yet.\", \"concerns\": [{\"concern\": \"radiance\", \"verdict\": \"unclear\", \"text\": \"Dullness: no change beyond the noise yet. The effect is -0.1 against a threshold of 1.25, so the treated half is not measurably different from the control half so far.\"}], \"claims\": [{\"claim\": \"Visibly brighter, more radiant skin in 7 days\", \"result\": \"too early\"}, {\"claim\": \"Evens out dullness\", \"result\": \"too early\"}, {\"claim\": \"Brightening for dull, tired-looking skin\", \"result\": \"too early\"}], \"next\": \"Keep scanning both halves as planned and check again once the trial has run the full 7 days named in the first claim.\"}",
+   "skin_type": "I",
+   "created_at": 1793213270.9257286,
+   "started_at": 1793213570.9257286
+  }
+ ],
+ "scans": [
+  {
+   "trial_id": "359bmFjBjBGO",
+   "phase": "baseline",
+   "at": 1793213270.9257286,
+   "checks": "{\"face_width\": 0.631, \"yaw\": 0.457, \"roll\": 0.4, \"light_left\": 177.0, \"light_right\": 170.0, \"sharpness\": 102.6}",
+   "sides": "{\"radiance\": {\"img_left\": 2.044, \"img_right\": 3.449}}",
+   "scores": "{\"raw\": {\"radiance\": 96.24198079109192}, \"ui\": {\"radiance\": 94}, \"overall\": 94.0}",
+   "units": 9
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "phase": "baseline",
+   "at": 1793213570.9257286,
+   "checks": "{\"face_width\": 0.63, \"yaw\": 0.458, \"roll\": 0.5, \"light_left\": 180.0, \"light_right\": 173.0, \"sharpness\": 107.4}",
+   "sides": "{\"radiance\": {\"img_left\": 2.135, \"img_right\": 3.344}}",
+   "scores": "{\"raw\": {\"radiance\": 96.23168110847473}, \"ui\": {\"radiance\": 94}, \"overall\": 94.0}",
+   "units": 9
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "phase": "trial",
+   "at": 1793226530.9257286,
+   "checks": "{\"face_width\": 0.632, \"yaw\": 0.457, \"roll\": 0.5, \"light_left\": 179.0, \"light_right\": 170.0, \"sharpness\": 103.7}",
+   "sides": "{\"radiance\": {\"img_left\": 2.046, \"img_right\": 3.311}}",
+   "scores": "{\"raw\": {\"radiance\": 96.76101207733154}, \"ui\": {\"radiance\": 94}, \"overall\": 94.0}",
+   "units": 9
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "phase": "trial",
+   "at": 1793256770.9257286,
+   "checks": "{\"face_width\": 0.631, \"yaw\": 0.458, \"roll\": 0.5, \"light_left\": 182.0, \"light_right\": 170.0, \"sharpness\": 105.8}",
+   "sides": "{\"radiance\": {\"img_left\": 1.966, \"img_right\": 3.4}}",
+   "scores": "{\"raw\": {\"radiance\": 96.74509763717651}, \"ui\": {\"radiance\": 94}, \"overall\": 94.0}",
+   "units": 9
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "phase": "trial",
+   "at": 1793299970.9257286,
+   "checks": "{\"face_width\": 0.63, \"yaw\": 0.459, \"roll\": 0.5, \"light_left\": 183.0, \"light_right\": 170.0, \"sharpness\": 106.7}",
+   "sides": "{\"radiance\": {\"img_left\": 1.919, \"img_right\": 3.301}}",
+   "scores": "{\"raw\": {\"radiance\": 96.72836661338806}, \"ui\": {\"radiance\": 94}, \"overall\": 94.0}",
+   "units": 9
+  }
+ ],
+ "agent_log": [
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793213270.9257286,
+   "job": "plan",
+   "step": "{\"thought\": \"I need the concern catalog to map the brightening and dullness claims to measurable concerns.\", \"tool\": \"concern_catalog\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793213270.9257286,
+   "job": "plan",
+   "step": "{\"thought\": \"Radiance fits the claims, and I want to check the scan budget before choosing how often to scan.\", \"tool\": \"unit_budget\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793213270.9257286,
+   "job": "plan",
+   "step": "{\"thought\": \"Radiance covers every claim, the serum has no strong actives, and the budget allows plenty of scans, so I can finish the plan.\", \"final\": {\"product\": \"Glow Serum\", \"claims\": [{\"text\": \"Visibly brighter, more radiant skin in 7 days\", \"concern\": \"radiance\"}, {\"text\": \"Evens out dullness\", \"concern\": \"radiance\"}, {\"text\": \"Brightening for dull, tired-looking skin\", \"concern\": \"radiance\"}], \"concerns\": [\"radiance\"], \"days\": 1, \"scan_every_hours\": 4, \"patch_first\": false, \"safe_to_try\": true, \"cautions\": [\"No label photo was given, so only the ingredients named in the listing (niacinamide, licorice root) were checked. Read the full ingredient list before use.\", \"The listing promises results in 7 days, but radiance can change within hours, so a one-day test may be too early to judge the full claim.\"], \"summary\": \"Put the serum on one half of your face and leave the other half bare. Scan both halves before you start and again through the day; one day can show a quick change, but it may be too early to judge the 7-day claim.\"}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793226530.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"A new scan was added, so I need the per-concern stats before choosing the next step.\", \"tool\": \"trial_stats\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793226530.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"The effect is well inside the noise, and I need the plan's scan interval to set the next scan time.\", \"tool\": \"trial_plan\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793226530.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"The effect of 0.04 is far inside the 1.25 threshold, so it is too early to tell; continue and rescan at the plan's 4-hour interval.\", \"final\": {\"action\": \"continue\", \"message\": \"The new scan shows almost no difference between the treated and bare halves (effect 0.04, well inside the 1.25 noise threshold), so it's too early to tell if the serum is working. Keep the serum on the treated half only and scan both halves again in 4 hours.\", \"next_scan_in_hours\": 4}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793256770.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"I need the current stats for each concern before choosing a step.\", \"tool\": \"trial_stats\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793256770.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"The effect is well inside the noise threshold, so I need the plan's scan interval before choosing the next scan time.\", \"tool\": \"trial_plan\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793256770.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"The radiance effect is -0.04, far inside the 1.25 threshold, so the verdict is unclear; the only allowed action is continue and the plan scans every 4 hours.\", \"final\": {\"action\": \"continue\", \"message\": \"The treated half and the bare half look almost the same so far: the effect is -0.04, well inside the 1.25 noise threshold, so it's too early to tell. Keep the serum on one half only and scan both halves again in 4 hours.\", \"next_scan_in_hours\": 4}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793299970.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"I need the per-concern stats before choosing between conclude and extend.\", \"tool\": \"trial_stats\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793299970.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"The effect is inside the noise, so I need the plan's days and scan interval before choosing between conclude and extend.\", \"tool\": \"trial_plan\"}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793299970.9257286,
+   "job": "next_step",
+   "step": "{\"thought\": \"The effect of -0.1 is far inside the 1.25 threshold, and one day can't test a 7-day claim, so extending is the honest choice.\", \"final\": {\"action\": \"extend\", \"message\": \"After the first day, the treated side looks about the same as the control: the effect is -0.1, well inside the noise threshold of 1.25, so there's no clear brightening yet. That is too early to tell, since the claim is for 7 days. Keep using the serum on one half only and scan again when the next one is due.\", \"next_scan_in_hours\": 4}, \"rejected\": null}"
+  },
+  {
+   "trial_id": "359bmFjBjBGO",
+   "at": 1793299970.9257286,
+   "job": "verdict",
+   "step": "{\"thought\": \"Context has the one unclear concern and 24 hours of data, so no tool is needed; all three claims are too early.\", \"final\": {\"headline\": \"Too early to tell: after 24 hours, the treated half shows no change in dullness beyond the noise yet.\", \"concerns\": [{\"concern\": \"radiance\", \"verdict\": \"unclear\", \"text\": \"Dullness: no change beyond the noise yet. The effect is -0.1 against a threshold of 1.25, so the treated half is not measurably different from the control half so far.\"}], \"claims\": [{\"claim\": \"Visibly brighter, more radiant skin in 7 days\", \"result\": \"too early\"}, {\"claim\": \"Evens out dullness\", \"result\": \"too early\"}, {\"claim\": \"Brightening for dull, tired-looking skin\", \"result\": \"too early\"}], \"next\": \"Keep scanning both halves as planned and check again once the trial has run the full 7 days named in the first claim.\"}, \"rejected\": null}"
+  }
+ ]
+}

@@ -1,9 +1,11 @@
-"""The demo trial: a finished trial anyone can open without spending units. It is a recording
-of numbers only (scores, per-half coverage, the agent's steps), stored in demo/demo_trial.json."""
+"""The demo trials: finished trials anyone can open without spending units. Each is a recording
+of numbers only (scores, per-half coverage, the agent's steps), stored as demo/*.json; their
+pictures are in demo/media/<trial id>/."""
 import json
 import pathlib
 
-DEMO_FILE = pathlib.Path(__file__).resolve().parent.parent / 'demo' / 'demo_trial.json'
+DEMO_DIR = pathlib.Path(__file__).resolve().parent.parent / 'demo'
+DEMO_FILE = DEMO_DIR / 'demo_trial.json'
 TABLES = {'trials': 'id', 'scans': 'trial_id', 'agent_log': 'trial_id'}
 
 
@@ -16,6 +18,11 @@ def export(con, trial_id, path=DEMO_FILE):
         t['device'] = 'demo'
     path.parent.mkdir(exist_ok=True)
     path.write_text(json.dumps(rec, indent=1))
+
+
+def load_all(con):
+    for path in sorted(DEMO_DIR.glob('*.json')):
+        load(con, path)
 
 
 def load(con, path=DEMO_FILE):

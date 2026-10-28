@@ -1,0 +1,30 @@
+{
+ "treated": "img_left",
+ "midline": [
+  [
+   0.4857,
+   0.0
+  ],
+  [
+   0.5087,
+   1.0
+  ]
+ ],
+ "photos": {
+  "baseline": "baseline.jpg",
+  "latest": "latest.jpg",
+  "promise": "promise.jpg"
+ },
+ "overlays": {
+  "baseline": {
+   "radiance": "baseline-radiance.png"
+  },
+  "latest": {
+   "radiance": "latest-radiance.png"
+  }
+ },
+ "promise_concerns": [
+  "radiance"
+ ],
+ "note": "A finished trial recorded through the real API on one of YouCam's sample faces. Staged: the serum's effect on the treated half is YouCam AI Skin Simulation (radiance) at rising strength, and the clock jumps between scans. YouCam's dullness map did not move past the noise, so the verdict is too early."
+}

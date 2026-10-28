@@ -18,7 +18,7 @@ from .youcam import YouCam, YouCamError, unit_cost
 @asynccontextmanager
 async def lifespan(_):
     con = db.connect()
-    demo.load(con)
+    demo.load_all(con)
     con.close()
     yield
 
@@ -263,20 +263,40 @@ def example_shop(code: str, con=Depends(get_db)):
     return HTMLResponse(page)
 
 
-DEMO_MEDIA = demo.DEMO_FILE.parent / 'media'
+DEMO_MEDIA = demo.DEMO_DIR / 'media'
+
+
+def demo_media(trial_id):
+    """A demo trial's pictures, with paths under /demo-media."""
+    manifest = DEMO_MEDIA / trial_id / 'manifest.json'
+    if not manifest.exists():
+        return None
+    m = json.loads(manifest.read_text())
+    prefix = f'{trial_id}/'
+    m['photos'] = {k: prefix + v for k, v in m.get('photos', {}).items()}
+    m['overlays'] = {k: {c: prefix + v for c, v in o.items()} for k, o in m.get('overlays', {}).items()}
+    return m
+
+
+@app.get('/api/demos')
+def demo_trials(con=Depends(get_db)):
+    """The finished demo trials, newest first, with a cover picture each."""
+    rows = con.execute("select id, product, created_at from trials where device = 'demo' order by created_at desc").fetchall()
+    return [{**dict(r), 'cover': (demo_media(r['id']) or {}).get('photos', {}).get('latest')} for r in rows]
 
 
 @app.get('/api/demo')
-def demo_trial(con=Depends(get_db)):
-    """A finished trial to look around in. Costs no units. Its pictures (YouCam's sample face,
+def demo_trial(id: str = '', con=Depends(get_db)):
+    """A finished trial to look around in. Costs no units. Its pictures (YouCam's sample faces,
     YouCam's masks, the simulated promise) are under /demo-media."""
-    t = con.execute("select id from trials where device = 'demo' order by created_at desc").fetchone()
+    q = "select id from trials where device = 'demo' and (? = '' or id = ?) order by created_at desc"
+    t = con.execute(q, (id, id)).fetchone()
     if not t:
-        raise HTTPException(404, 'no demo trial loaded')
+        raise HTTPException(404, 'no such demo trial')
     out = view(con, db.trial_row(con, t['id']))
-    manifest = DEMO_MEDIA / 'manifest.json'
-    if manifest.exists():
-        out['media'] = json.loads(manifest.read_text())
+    media = demo_media(t['id'])
+    if media:
+        out['media'] = media
     return out
 
 
