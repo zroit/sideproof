@@ -1,4 +1,4 @@
-"""HalfFace API: start a trial, add scans, read the result. Three calls are enough for a shop
+"""SideProof API: start a trial, add scans, read the result. Three calls are enough for a shop
 to put a split-face trial on its own page."""
 import html
 import json
@@ -23,7 +23,7 @@ async def lifespan(_):
     yield
 
 
-app = FastAPI(title='HalfFace API', version='0.1.0', lifespan=lifespan, description=(
+app = FastAPI(title='SideProof API', version='0.1.0', lifespan=lifespan, description=(
     'Split-face product trials on YouCam Skin AI. The product goes on one half of the face; '
     'the other half is the control. Photos are measured and dropped; only numbers are kept.'))
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=['*'])
@@ -219,7 +219,7 @@ def product(code: str, con=Depends(get_db)):
 
 @app.get('/shop/{code}', include_in_schema=False)
 def example_shop(code: str, con=Depends(get_db)):
-    """A made-up shop's product page with the trial link on it, to show where HalfFace sits."""
+    """A made-up shop's product page with the trial link on it, to show where SideProof sits."""
     p = con.execute('select * from products where code = ?', (code,)).fetchone()
     if not p:
         raise HTTPException(404, 'unknown product code')
@@ -258,6 +258,6 @@ def write_verdict(trial_id: str, dev=Depends(device), con=Depends(get_db)):
 
 app.include_router(admin.router)
 app.include_router(admin.view)
-WEB_DIR = os.environ.get('HALFFACE_WEB_DIR', '')
+WEB_DIR = os.environ.get('SIDEPROOF_WEB_DIR', '')
 if WEB_DIR and os.path.isdir(WEB_DIR):     # the Flutter web build, served from the same host
     app.mount('/', StaticFiles(directory=WEB_DIR, html=True), name='web')

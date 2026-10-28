@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:halfface/api.dart';
-import 'package:halfface/trial_screen.dart';
+import 'package:sideproof/api.dart';
+import 'package:sideproof/trial_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// trial_fixture.json is a finished dev trial as the backend returns it (numbers only).

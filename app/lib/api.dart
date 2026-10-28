@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The HalfFace backend. The web build talks to the host it was served from; the APK gets
+/// The SideProof backend. The web build talks to the host it was served from; the APK gets
 /// the address at build time: --dart-define=API_BASE=https://...
 class Api {
   Api._(this.base, this.device);

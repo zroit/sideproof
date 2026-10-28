@@ -6,8 +6,8 @@ import re
 HERE = pathlib.Path(__file__).resolve().parent
 
 YOUCAM_BASE = os.environ.get('YOUCAM_BASE', 'https://yce-api-01.makeupar.com')
-DB_PATH = os.environ.get('HALFFACE_DB', str(HERE.parent / 'halfface.db'))
-FACE_MODEL = os.environ.get('HALFFACE_FACE_MODEL', str(HERE.parent / 'models' / 'face_landmarker.task'))
+DB_PATH = os.environ.get('SIDEPROOF_DB', str(HERE.parent / 'sideproof.db'))
+FACE_MODEL = os.environ.get('SIDEPROOF_FACE_MODEL', str(HERE.parent / 'models' / 'face_landmarker.task'))
 ENV_LINE = re.compile(r'(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=(.*)')
 
 

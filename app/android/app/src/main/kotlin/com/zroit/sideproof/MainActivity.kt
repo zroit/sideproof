@@ -1,4 +1,4 @@
-package com.zroit.halfface
+package com.zroit.sideproof
 
 import io.flutter.embedding.android.FlutterActivity
 

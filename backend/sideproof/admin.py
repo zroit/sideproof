@@ -15,10 +15,10 @@ from .youcam import YouCamError
 
 router = APIRouter(prefix='/admin', include_in_schema=False)
 view = APIRouter(prefix='/dashboard', include_in_schema=False)
-COOKIE = 'hf_admin'
-VIEW_COOKIE = 'hf_view'
-PUBLIC_URL = os.environ.get('HALFFACE_PUBLIC_URL', '')
-ADMIN_HOST = os.environ.get('HALFFACE_ADMIN_HOST', '')
+COOKIE = 'sp_admin'
+VIEW_COOKIE = 'sp_view'
+PUBLIC_URL = os.environ.get('SIDEPROOF_PUBLIC_URL', '')
+ADMIN_HOST = os.environ.get('SIDEPROOF_ADMIN_HOST', '')
 
 
 def get_db():
@@ -43,11 +43,11 @@ def signed_in(request, cookie, secret_name, base):
 
 def authed(request: Request):
     gate(request)
-    signed_in(request, COOKIE, 'HALFFACE_ADMIN_TOKEN', '/admin')
+    signed_in(request, COOKIE, 'SIDEPROOF_ADMIN_TOKEN', '/admin')
 
 
 def viewer(request: Request):
-    signed_in(request, VIEW_COOKIE, 'HALFFACE_VIEW_TOKEN', '/dashboard')
+    signed_in(request, VIEW_COOKIE, 'SIDEPROOF_VIEW_TOKEN', '/dashboard')
 
 
 def outcomes(con, code):
@@ -121,23 +121,23 @@ def sign_in(request, token, cookie, secret_name, base):
 @router.get('/login')
 def admin_login_form(request: Request):
     gate(request)
-    return login_form('HalfFace admin', '/admin', 'Admin token')
+    return login_form('SideProof admin', '/admin', 'Admin token')
 
 
 @router.post('/login')
 def admin_login(request: Request, token: str = Form(...)):
     gate(request)
-    return sign_in(request, token, COOKIE, 'HALFFACE_ADMIN_TOKEN', '/admin')
+    return sign_in(request, token, COOKIE, 'SIDEPROOF_ADMIN_TOKEN', '/admin')
 
 
 @view.get('/login')
 def view_login_form():
-    return login_form('HalfFace dashboard', '/dashboard', 'Access token')
+    return login_form('SideProof dashboard', '/dashboard', 'Access token')
 
 
 @view.post('/login')
 def view_login(request: Request, token: str = Form(...)):
-    return sign_in(request, token, VIEW_COOKIE, 'HALFFACE_VIEW_TOKEN', '/dashboard')
+    return sign_in(request, token, VIEW_COOKIE, 'SIDEPROOF_VIEW_TOKEN', '/dashboard')
 
 
 @router.get('', dependencies=[Depends(authed)])
@@ -180,7 +180,7 @@ def home(con, base, read_only):
 <label>Shop<input name="shop" required></label><label>Product<input name="name" required></label>
 <label style="flex-basis:100%">Listing text (the claims as the shop sells it)<textarea name="listing" rows="3" required></textarea></label><button>Add product</button></form>'''
     note = ' Read-only view.' if read_only else ''
-    body = f'''<h1>HalfFace</h1><p class="mute">Split-face product trials on YouCam Skin AI. Numbers only: no photo is kept.{note}</p>
+    body = f'''<h1>SideProof</h1><p class="mute">Split-face product trials on YouCam Skin AI. Numbers only: no photo is kept.{note}</p>
 <div class="row"><div class="card"><div class="mute">YouCam units left</div><div class="big">{balance}</div></div>
 <div class="card"><div class="mute">Used in the last 24 h</div><div class="big">{used} / {cap}</div></div>
 <div class="card"><div class="mute">Trials</div><div class="big">{n_trials}</div></div></div>
@@ -188,7 +188,7 @@ def home(con, base, read_only):
 <h2>Products</h2><div class="card"><table><tr><th>Product</th><th>Trial code</th><th>Trials</th></tr>{prow or '<tr><td colspan=3 class="mute">None yet.</td></tr>'}</table>
 {add_product}</div>
 <h2>Recent trials</h2><div class="card"><table><tr><th>Trial</th><th>Product</th><th>Status</th><th>Skin type</th><th>Scans</th><th>Started</th></tr>{trow or '<tr><td colspan=6 class="mute">None yet.</td></tr>'}</table></div>'''
-    return page('HalfFace dashboard' if read_only else 'HalfFace admin', body)
+    return page('SideProof dashboard' if read_only else 'SideProof admin', body)
 
 
 @router.post('/settings', dependencies=[Depends(authed)])

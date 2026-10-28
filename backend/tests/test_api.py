@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from halfface import api, config, face, llm
+from sideproof import api, config, face, llm
 
 DEV = {'X-Device': 'test-device-0123456789'}
 PHOTO = io.BytesIO()
@@ -119,7 +119,7 @@ def test_another_device_cannot_read_a_trial(client, monkeypatch):
 
 
 def test_a_shop_sees_its_trials_and_the_claim_audit(client, monkeypatch):
-    monkeypatch.setenv('HALFFACE_ADMIN_TOKEN', 'admin-token-for-tests')
+    monkeypatch.setenv('SIDEPROOF_ADMIN_TOKEN', 'admin-token-for-tests')
     assert client.get('/admin', follow_redirects=False).headers['location'] == '/admin/login'
     client.post('/admin/login', data={'token': 'admin-token-for-tests'})
     r = client.post('/admin/products', data={'shop': 'Glow Lab', 'name': 'Matte Gel', 'listing': 'Controls shine all day.'})
@@ -145,8 +145,8 @@ def test_a_shop_sees_its_trials_and_the_claim_audit(client, monkeypatch):
 
 
 def test_the_view_token_reads_the_dashboard_but_changes_nothing(client, monkeypatch):
-    monkeypatch.setenv('HALFFACE_ADMIN_TOKEN', 'admin-token-for-tests')
-    monkeypatch.setenv('HALFFACE_VIEW_TOKEN', 'view-token-for-tests')
+    monkeypatch.setenv('SIDEPROOF_ADMIN_TOKEN', 'admin-token-for-tests')
+    monkeypatch.setenv('SIDEPROOF_VIEW_TOKEN', 'view-token-for-tests')
     client.post('/admin/login', data={'token': 'admin-token-for-tests'})
     code = client.post('/admin/products', data={'shop': 'Glow Lab', 'name': 'Matte Gel', 'listing': 'x'}).url.path.rsplit('/', 1)[1]
     client.cookies.clear()

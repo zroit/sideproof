@@ -1,6 +1,6 @@
 """Record the demo trial that the app opens without spending units.
 
-A full HalfFace run on YouCam's own sample face, through the real API: real YouCam Skin
+A full SideProof run on YouCam's own sample face, through the real API: real YouCam Skin
 Analysis, the real agent, the real trial math. Two things are staged: the "product" is a
 digital matte filter on the treated half (highlights squashed, wearing off over the day), and
 the clock is moved forward between scans. Only numbers are saved, to demo/demo_trial.json.
@@ -20,8 +20,8 @@ import sys
 import tempfile
 import time
 
-os.environ['HALFFACE_DB'] = str(pathlib.Path(tempfile.mkdtemp()) / 'demo.db')
-os.environ.setdefault('HALFFACE_LLM', 'gemini')
+os.environ['SIDEPROOF_DB'] = str(pathlib.Path(tempfile.mkdtemp()) / 'demo.db')
+os.environ.setdefault('SIDEPROOF_LLM', 'gemini')
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import httpx
@@ -29,7 +29,7 @@ import numpy as np
 from fastapi.testclient import TestClient
 from PIL import Image, ImageEnhance
 
-from halfface import api, db, demo, face
+from sideproof import api, db, demo, face
 
 SAMPLE = 'https://plugins-media.makeupar.com/strapi/assets/skin_analysis_01_5b5defd339.png'
 PRODUCT = 'Matte Gel'

@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from halfface import llm
+from sideproof import llm
 
 
 class Answer:

@@ -1,4 +1,4 @@
-from halfface import agent, trial
+from sideproof import agent, trial
 
 
 def scan(phase, hours, treated, control, concern='oiliness', side='img_left'):

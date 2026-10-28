@@ -25,7 +25,7 @@ create index if not exists trials_device on trials (device);
 '''
 
 DEFAULTS = {
-    'llm_provider': os.environ.get('HALFFACE_LLM', 'gemini'),
+    'llm_provider': os.environ.get('SIDEPROOF_LLM', 'gemini'),
     'daily_unit_cap': '150',
     'fitzpatrick': 'on',
 }

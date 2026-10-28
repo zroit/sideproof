@@ -5,10 +5,10 @@ import 'api.dart';
 import 'new_trial.dart';
 import 'trial_screen.dart';
 
-void main() => runApp(const HalfFaceApp());
+void main() => runApp(const SideProofApp());
 
-class HalfFaceApp extends StatelessWidget {
-  const HalfFaceApp({super.key});
+class SideProofApp extends StatelessWidget {
+  const SideProofApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class HalfFaceApp extends StatelessWidget {
           cardTheme: const CardThemeData(margin: EdgeInsets.symmetric(vertical: 6)),
         );
     return MaterialApp(
-      title: 'HalfFace',
+      title: 'SideProof',
       debugShowCheckedModeBanner: false,
       theme: theme(Brightness.light),
       darkTheme: theme(Brightness.dark),
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('HalfFace')),
+      appBar: AppBar(title: const Text('SideProof')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Text('Is it working?\nTest it on half your face.', style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
