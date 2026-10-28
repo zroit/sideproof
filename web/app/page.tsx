@@ -65,7 +65,7 @@ export default function Home() {
       <main>
         <section className="hero">
           <div className="hero-text">
-            <h1>Did it work, or was it the weather?</h1>
+            <h1>Did it <em className="shimmer">work</em>, or was it the weather?</h1>
             <p className="lead">
               Put a skincare product on one half of your face and leave the other half alone. YouCam Skin AI measures both
               halves, so whatever differs is the product.
@@ -74,12 +74,15 @@ export default function Home() {
               <Link href="/new/" className="btn">Start a trial</Link>
               <Link href="/demo/" className="btn btn-ghost">See a finished trial</Link>
             </div>
-            <p className="apis">
-              Built on YouCam <b>AI Skin Analysis</b>, <b>AI Skin Simulation</b> and <b>AI Fitzpatrick Skin Type</b>.
-            </p>
+            <div className="apis" aria-label="Built on three YouCam APIs">
+              <span className="chrome-chip">YouCam AI Skin Analysis</span>
+              <span className="chrome-chip">AI Skin Simulation</span>
+              <span className="chrome-chip">AI Fitzpatrick Skin Type</span>
+            </div>
           </div>
           <div className="hero-photo">
             {switcher(heroIndex, setPick)}
+            <div className="hero-card">
             {pics.latest ? <SplitPhoto
               key={demo?.id}
               src={pics.latest}
@@ -87,8 +90,20 @@ export default function Home() {
               overlay={pics.overlays?.[shown?.concern ?? "oiliness"]}
               midline={pics.midline}
               treated={treated}
-              labels={last ? { treated: `Treated ${last.treated.toFixed(1)}%`, control: `Control ${last.control.toFixed(1)}%` } : undefined}
             /> : <div className="skeleton" />}
+            {shown && last && (
+              <div className="glass">
+                <div className="row">
+                  <span className="stat">{shown.verdict === "better" && last.control > 0 ? `${Math.round((1 - last.treated / last.control) * 100)}% less ${shown.label.toLowerCase()}` : shown.label}</span>
+                  <VerdictPill verdict={shown.verdict} />
+                </div>
+                <div className="halves">
+                  <span>Control {last.control.toFixed(1)}%</span>
+                  <span className="t">Treated {last.treated.toFixed(1)}%</span>
+                </div>
+              </div>
+            )}
+            </div>
             <p className="caption">
               {shown ? `YouCam's ${shown.label.toLowerCase()} map ${demo ? span(demo) : ""} in: the share of each half YouCam marked. ` : ""}
               {pics.note ?? ""}
@@ -97,13 +112,13 @@ export default function Home() {
         </section>
 
         <section id="how" className="section">
-          <h2>A fair test, on half your face</h2>
+          <h2>A fair test, on <em className="rose">half</em> your face</h2>
           <p className="lead narrow">Dermatologists test products with a split-face trial. SideProof gives anyone the same design with a phone.</p>
           <ol className="steps">
             {STEPS.map((s, i) => (
               <li key={s.title}>
                 <Art step={(i + 1) as 1 | 2 | 3 | 4} />
-                <h3>{s.title}</h3>
+                <h3><span className="num">{i + 1}</span>{s.title}</h3>
                 <p>{s.body}</p>
               </li>
             ))}
@@ -111,7 +126,7 @@ export default function Home() {
         </section>
 
         <section className="section">
-          <h2>The promise, then the proof</h2>
+          <h2>The <em className="lilac">promise</em>, then the proof</h2>
           <p className="lead narrow">
             Before you start, YouCam AI Skin Simulation shows what the claims promise on your own face. Then the trial measures what
             actually happened.
@@ -139,7 +154,7 @@ export default function Home() {
 
         <section id="brands" className="section brands">
           <div>
-            <h2>For shops and brands</h2>
+            <h2>For shops and <em className="rose">brands</em></h2>
             <p className="lead">A trial link sits next to Add to cart, or on the sample pack. Customers test before they buy; the brand learns what the product really does.</p>
             <ul className="ticks">
               <li>Outcomes per claim from real faces: better, too early, or worse</li>
@@ -154,9 +169,11 @@ export default function Home() {
           <div className="widget" aria-hidden="true">
             <div className="widget-buy">Add to cart</div>
             <div className="widget-sp">
-              <div className="widget-head"><Mark size={22} /> Not sure it works on you?</div>
-              <p>Test the sample on half your face first.</p>
-              <div className="widget-btn">Test it on half your face</div>
+              <div>
+                <div className="widget-head"><Mark size={30} /> Not sure it works <em className="rose">on you</em>?</div>
+                <p>Test the sample on half your face first.</p>
+                <div className="widget-btn">Test it on half your face</div>
+              </div>
             </div>
           </div>
         </section>

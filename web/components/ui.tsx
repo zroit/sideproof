@@ -1,12 +1,20 @@
 import Link from "next/link";
 import type { ConcernStats } from "@/lib/api";
 
-/** The mark: a disc split down the middle; the filled half had the product. */
+/** The mark: a face split down the middle. The filled half had the product, the outlined half
+ *  is the control; a closed eye on each. */
 export function Mark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="mark">
-      <path d="M15 3A13 13 0 0 0 15 29Z" fill="var(--cobalt)" />
-      <path d="M18.4 4.4A11.6 11.6 0 0 1 18.4 27.6Z" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinejoin="round" />
+      <defs>
+        <linearGradient id="sp-mark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#F48FB1" /><stop offset=".55" stopColor="#E3507E" /><stop offset="1" stopColor="#B467E0" />
+        </linearGradient>
+      </defs>
+      <path d="M15 2.6C8.6 3 4.8 8.3 4.8 14.6c0 7 4.4 13 10.2 14.9Z" fill="url(#sp-mark)" />
+      <path d="M17.2 3.9c5.4.9 8.6 5.4 8.6 10.7 0 6-3.5 11-8.6 13.2Z" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M9.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="#FBF6F1" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M19.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -44,21 +52,38 @@ const VERDICT = { better: "Better", worse: "Worse", unclear: "Too early to tell"
 
 export function VerdictPill({ verdict }: { verdict?: string | null }) {
   const v = (verdict ?? "") as keyof typeof VERDICT;
-  return <span className={`pill pill-${v || "wait"}`}>{VERDICT[v] ?? "Waiting for scans"}</span>;
+  return <span className={`pill pill-${v || "wait"}`}>{v === "better" && <Tick />}{VERDICT[v] ?? "Waiting for scans"}</span>;
 }
 
 export function ClaimPill({ result }: { result: string }) {
   const kind = result.startsWith("supported") ? "better" : result.startsWith("not supported") ? "worse" : "unclear";
-  return <span className={`pill pill-${kind}`}>{result}</span>;
+  return <span className={`pill pill-${kind}`}>{kind === "better" && <Tick />}{result}</span>;
 }
 
-/** The verdict as a picture: the control half grey, the treated half in the result's colour. */
-export function VerdictDisc({ verdict, size = 64 }: { verdict?: string; size?: number }) {
-  const colour = verdict === "better" ? "var(--better)" : verdict === "worse" ? "var(--worse)" : "var(--outline)";
+function Tick() {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <path d="M15 2A14 14 0 0 0 15 30Z" fill="var(--mist)" />
-      <path d="M17 2A14 14 0 0 1 17 30Z" fill={colour} />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12.5l4.5 4.5L19 7" />
+    </svg>
+  );
+}
+
+/** How far a concern moved, as a ring: the effect in multiples of the noise threshold. A full
+ *  sweep is 4 times the threshold; a result inside the noise stays a short arc. */
+export function VerdictRing({ effect, threshold, verdict, size = 112 }: { effect?: number; threshold?: number; verdict?: string; size?: number }) {
+  const ratio = effect !== undefined && threshold ? Math.abs(effect) / threshold : 0;
+  const share = Math.min(1, ratio / 4);
+  const id = `ring-${verdict ?? "x"}`;
+  const stops = verdict === "worse" ? ["#F2A08F", "#B23A2E"] : verdict === "better" ? ["#F48FB1", "#B467E0"] : ["#F7C98E", "#D9893A"];
+  return (
+    <svg width={size} height={size} viewBox="0 0 112 112" className="ring" role="img" aria-label={`The change is ${ratio.toFixed(1)} times the noise`}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={stops[0]} /><stop offset="1" stopColor={stops[1]} /></linearGradient>
+      </defs>
+      <circle cx="56" cy="56" r="48" fill="none" stroke="#F3E8E4" strokeWidth="12" />
+      <circle cx="56" cy="56" r="48" fill="none" stroke={`url(#${id})`} strokeWidth="12" strokeLinecap="round" strokeDasharray="302" strokeDashoffset={302 * (1 - Math.max(0.04, share))} className="ring-arc" />
+      <text x="56" y="58" textAnchor="middle" style={{ font: "400 32px var(--display)", fill: "var(--ink)" }}>{ratio.toFixed(1)}×</text>
+      <text x="56" y="77" textAnchor="middle" style={{ font: "700 10px var(--body)", fill: "var(--muted)" }}>{ratio >= 1 ? "past the noise" : "of the noise"}</text>
     </svg>
   );
 }
@@ -76,9 +101,13 @@ export function EffectChart({ stats, compact = false }: { stats: ConcernStats; c
   const x = (hr: number) => left + 10 + (hr / maxH) * (w - 20);
   const y = (e: number) => h / 2 - (e / span) * (h / 2 - 8);
   const pts = series.map((s) => `${x(s.hours).toFixed(1)},${y(s.effect).toFixed(1)}`).join(" ");
+  const gid = `line-${stats.concern}${compact ? "-c" : ""}`;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`${stats.label}: treated half against control over ${maxH} hours`}>
-      <rect x={left} y={y(t)} width={w} height={y(-t) - y(t)} rx="8" className="chart-band" />
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#F48FB1" /><stop offset=".5" stopColor="#E3507E" /><stop offset="1" stopColor="#B467E0" /></linearGradient>
+      </defs>
+      <rect x={left} y={y(t)} width={w} height={y(-t) - y(t)} rx="11" className="chart-band" />
       <line x1={left} x2={W} y1={y(0)} y2={y(0)} className="chart-zero" />
       {!compact && (
         <g className="chart-label">
@@ -89,7 +118,7 @@ export function EffectChart({ stats, compact = false }: { stats: ConcernStats; c
           <text x={W - 4} y={H - 4} textAnchor="end">{maxH.toFixed(0)} h</text>
         </g>
       )}
-      <polyline points={pts} className="chart-line" />
+      <polyline points={pts} className="chart-line" stroke={`url(#${gid})`} />
       {series.map((s, i) => (
         <circle key={i} cx={x(s.hours)} cy={y(s.effect)} r={compact ? 5 : 6} className={s.phase === "baseline" ? "chart-dot-base" : "chart-dot"} />
       ))}

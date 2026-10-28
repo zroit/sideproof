@@ -6,7 +6,7 @@ import { statusWords } from "@/lib/api";
 import type { Saved } from "@/lib/photos";
 import { closeUpFor } from "@/lib/demo";
 import { Compare, SplitPhoto } from "./photo";
-import { ClaimPill, EffectChart, Timeline, VerdictDisc, VerdictPill } from "./ui";
+import { ClaimPill, EffectChart, Timeline, VerdictPill, VerdictRing } from "./ui";
 
 export function stepOf(t: Trial): number {
   if (t.verdict) return 3;
@@ -32,6 +32,8 @@ export function TrialView({ trial: t, pics, actions, demo = false }: { trial: Tr
   const last = current?.series?.[current.series.length - 1];
   const claimed = t.plan.claims.map((c) => c.concern).filter(Boolean) as string[];
   const promiseConcern = concerns.find((c) => claimed.includes(c.concern) && c.series?.length);
+  // The concern the verdict ring shows: a claimed one that was measured, the one that moved most.
+  const lead = [...concerns].filter((c) => c.state === "measured").sort((a, b) => Math.abs(b.effect ?? 0) / (b.threshold ?? 1) - Math.abs(a.effect ?? 0) / (a.threshold ?? 1)).find((c) => claimed.includes(c.concern)) ?? concerns.find((c) => c.state === "measured");
 
   return (
     <div className="trial">
@@ -49,10 +51,14 @@ export function TrialView({ trial: t, pics, actions, demo = false }: { trial: Tr
       {actions}
 
       {t.verdict && (
+        <div className="chrome">
         <section className="panel verdict">
           <div className="verdict-top">
-            <VerdictDisc verdict={overall(t)} size={72} />
-            <h2>{t.verdict.headline}</h2>
+            <VerdictRing effect={lead?.effect} threshold={lead?.threshold} verdict={lead?.verdict ?? overall(t)} />
+            <div>
+              <VerdictPill verdict={overall(t)} />
+              <h2>{t.verdict.headline}</h2>
+            </div>
           </div>
           {t.verdict.claims.length > 0 && (
             <ul className="claims">
@@ -63,11 +69,12 @@ export function TrialView({ trial: t, pics, actions, demo = false }: { trial: Tr
           )}
           {t.verdict.next && <p className="muted">{t.verdict.next}</p>}
         </section>
+        </div>
       )}
 
       {pics.latest && current && (
         <section className="panel">
-          <h2>What YouCam saw</h2>
+          <h2>What <em className="rose">YouCam</em> saw</h2>
           <p className="muted">YouCam AI Skin Analysis returns a map for each concern. SideProof splits it at the midline of the face and measures each half.</p>
           {withMap.length > 1 && (
             <div className="toggle" role="tablist">
@@ -90,7 +97,7 @@ export function TrialView({ trial: t, pics, actions, demo = false }: { trial: Tr
 
       {pics.promise && pics.baseline && (
         <section className="panel promise">
-          <h2>Promise and proof</h2>
+          <h2>The <em className="lilac">promise</em> and the proof</h2>
           <div className="two">
             <div>
               <Compare before={pics.baseline} after={pics.promise} beforeLabel="Before" afterLabel="The promise" alt="The baseline photo and YouCam's simulation of the claims" closeUp={closeUpFor(claimed, t.treated_image_side)} />

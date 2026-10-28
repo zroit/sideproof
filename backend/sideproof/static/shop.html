@@ -5,44 +5,149 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{name} · {shop}</title>
 <!-- An example shop page (a made-up brand) showing where a SideProof trial link sits. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fbf8f4;--ink:#22201d;--mute:#77706a;--line:#e8e1d8;--accent:#7a4bd0}
-@media (prefers-color-scheme:dark){:root{--bg:#161514;--ink:#efebe6;--mute:#a59e96;--line:#34302c}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}
-header{border-bottom:1px solid var(--line);padding:14px 16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
-main{max-width:920px;margin:0 auto;padding:24px 16px 64px;display:grid;gap:28px;grid-template-columns:1fr}
-@media (min-width:760px){main{grid-template-columns:1fr 1fr}}
-.shot{aspect-ratio:1;border-radius:18px;background:radial-gradient(circle at 50% 38%,#efe6da,#d9cbbb);display:grid;place-items:center}
-.tube{width:34%;height:62%;border-radius:22px 22px 10px 10px;background:linear-gradient(90deg,#fff,#efe9e2);box-shadow:0 18px 40px #0002;display:grid;place-items:center;text-align:center;font-size:12px;color:#5b534b;padding:10px}
-h1{font-size:30px;line-height:1.15;margin:4px 0 8px}.mute{color:var(--mute)}.price{font-size:20px;margin:10px 0 18px}
-.btn{display:block;text-align:center;padding:14px;border-radius:12px;text-decoration:none;font-weight:650}
-.buy{background:var(--ink);color:var(--bg)}
-/* The SideProof widget: the only part of this page in SideProof's colours. */
-.sp{margin-top:18px;padding:16px;border-radius:16px;background:#f2f4f3;color:#15232a;border:1px solid #c5cdcb}
-@media (prefers-color-scheme:dark){.sp{background:#172228;color:#e8eeec;border-color:#3b4a4f}}
-.sp-head{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}.sp p{margin:8px 0 12px;font-size:14px;line-height:1.5}
-.try{background:#2f5bea;color:#fff}.sp-foot{margin-top:10px;font-size:12px;opacity:.7}
-ul{padding-left:18px}
+:root{--cream:#fbf6f1;--ink:#2b1e25;--mute:#74636b;--line:#ebddd5;--rose:#e3507e;--cta:linear-gradient(120deg,#f48fb1 0%,#e3507e 45%,#b467e0 100%);--chrome:linear-gradient(130deg,#f9c9da,#e9ddfb 45%,#cff2ea 75%,#fbe3c8)}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.55 Manrope,system-ui,sans-serif}
+a{color:inherit}a:hover{color:#c23a66}
+.serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400}
+.bar{background:var(--ink);color:var(--cream);text-align:center;font-size:13px;font-weight:600;padding:9px 16px}
+header{max-width:1200px;margin:0 auto;padding:16px 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+.brand{text-decoration:none;font-size:30px;letter-spacing:.3px}
+nav{display:flex;flex-wrap:wrap;gap:22px;font-size:15px;font-weight:600}nav a{text-decoration:none}
+.icons{display:flex;gap:8px}.icon{width:44px;height:44px;border-radius:22px;display:grid;place-items:center;background:#fff}
+.icon svg{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+main{max-width:1200px;margin:0 auto;padding:6px 24px 64px}
+.crumbs{margin:0 0 18px;font-size:13px;color:var(--mute)}
+.product{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}
+.gallery{flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.hero{aspect-ratio:1/1;border-radius:32px;background:radial-gradient(circle at 50% 35%,#fff3ea 0%,#f6dccb 60%,#efcdba 100%);display:grid;place-items:center;overflow:hidden}
+.hero svg{width:52%}
+@media (prefers-reduced-motion:no-preference){.hero svg{animation:float 6s ease-in-out infinite}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.thumbs div{aspect-ratio:1/1;border-radius:20px;display:grid;place-items:center;text-align:center;padding:8px;font-size:12px;font-weight:700;color:var(--mute)}
+.info{flex:1 1 400px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.kicker{font-size:13px;font-weight:700;color:var(--mute)}
+h1{margin:0;font-size:clamp(40px,5vw,56px);line-height:1;letter-spacing:-.5px}
+.price{font-size:22px;font-weight:700}
+.desc{margin:0;font-size:16px;line-height:1.6;color:#5e4d55}
+fieldset{border:0;margin:0;padding:0}legend{font-size:13px;font-weight:700;margin-bottom:8px}
+.sizes{display:flex;gap:10px;flex-wrap:wrap}
+.sizes button{height:48px;padding:0 20px;border-radius:24px;border:1.5px solid #e5d6ce;background:transparent;font:600 14px Manrope,sans-serif;color:var(--ink);cursor:pointer}
+.sizes button[aria-pressed=true]{border:2px solid var(--ink);background:#fff;font-weight:700}
+.buy{display:flex;gap:10px}
+.qty{height:56px;padding:0 6px;border-radius:28px;background:#fff;display:flex;align-items:center;gap:4px}
+.qty button{width:44px;height:44px;border:0;border-radius:22px;background:#f6efeb;font-size:20px;color:var(--ink);cursor:pointer}
+.qty span{width:28px;text-align:center;font-weight:700}
+.add{flex:1;height:56px;border:0;border-radius:28px;background:var(--ink);color:var(--cream);font:800 16px Manrope,sans-serif;cursor:pointer}
+.sp{padding:2px;border-radius:28px;background:var(--chrome)}
+.sp>div{border-radius:26px;background:#fffdfb;padding:18px;display:flex;flex-direction:column;gap:12px}
+.sp-head{display:flex;align-items:center;gap:12px}
+.sp-head .serif{font-size:25px;line-height:1.05}.sp-head em{color:var(--rose)}
+.sp-head small{display:block;font-size:13px;color:var(--mute);margin-top:3px}
+.try{height:54px;border-radius:27px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:#fff!important;font-weight:800;background:var(--cta);box-shadow:0 14px 30px -16px rgba(227,80,126,.95)}
+.sp-foot{font-size:12px;color:var(--mute)}
+details{border-bottom:1px solid var(--line);padding:16px 0}
+details summary{cursor:pointer;font-weight:700;font-size:16px}
+details p{margin:10px 0 0;font-size:15px;line-height:1.6;color:#5e4d55}
+footer{background:var(--ink);color:#e9dcd4;padding:28px 24px;text-align:center;font-size:13px;margin-top:40px}
 </style>
 </head>
 <body>
-<header>{shop}</header>
+<div class="bar">Free shipping on orders over $40 · Try before you buy with a split-face trial</div>
+<header>
+  <a href="#" class="brand serif">{shop}</a>
+  <nav aria-label="Shop">
+    <a href="#">Shop all</a><a href="#">Serums</a><a href="#">Moisturisers</a><a href="#">Sets</a><a href="#">Journal</a>
+  </nav>
+  <div class="icons">
+    <a href="#" class="icon" aria-label="Search"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></a>
+    <a href="#" class="icon" aria-label="Bag, empty"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2Z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></a>
+  </div>
+</header>
 <main>
-  <div class="shot"><div class="tube">{name}</div></div>
-  <div>
-    <div class="mute">Example product page</div>
-    <h1>{name}</h1>
-    <div class="price">$24.00</div>
-    <p>{listing}</p>
-    <a class="btn buy" href="#">Add to cart</a>
-    <div class="sp">
-      <div class="sp-head"><svg class="mark" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true"><path d="M15 3A13 13 0 0 0 15 29Z" fill="#2F5BEA"/><path d="M18.4 4.4A11.6 11.6 0 0 1 18.4 27.6Z" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/></svg>Not sure it works on you?</div>
-      <p>Test the sample on half your face first. YouCam Skin AI measures the treated half against the other half,
-        so you see what this product did for your skin before you buy the full size.</p>
-      <a class="btn try" href="{link}">Test it on half your face</a>
-      <div class="sp-foot">Split-face trial by SideProof. Photos are measured and dropped.</div>
+  <p class="crumbs">Home / Moisturisers / {name}</p>
+  <div class="product">
+    <div class="gallery">
+      <div class="hero">
+        <svg viewBox="0 0 200 260" role="img" aria-label="A frosted pump bottle of {name}">
+          <defs>
+            <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f3e7ef"/><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#e9d9e4"/></linearGradient>
+            <linearGradient id="pump" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3a2a31"/><stop offset=".5" stop-color="#6b5560"/><stop offset="1" stop-color="#2b1e25"/></linearGradient>
+          </defs>
+          <ellipse cx="100" cy="246" rx="62" ry="9" fill="#c9a493" opacity=".45"/>
+          <rect x="88" y="10" width="44" height="12" rx="4" fill="url(#pump)"/>
+          <rect x="78" y="22" width="24" height="10" rx="3" fill="url(#pump)"/>
+          <rect x="80" y="30" width="40" height="34" rx="6" fill="url(#pump)"/>
+          <rect x="46" y="62" width="108" height="180" rx="26" fill="url(#glass)" stroke="#e2cfd9" stroke-width="2"/>
+          <rect x="56" y="112" width="88" height="84" rx="6" fill="#fbf6f1"/>
+          <text x="100" y="140" text-anchor="middle" style="font-family:'Instrument Serif',serif;font-size:12px;fill:#2b1e25">{shop}</text>
+          <text x="100" y="164" text-anchor="middle" style="font-family:Manrope,sans-serif;font-size:7.5px;font-weight:800;letter-spacing:1px;fill:#2b1e25">{name}</text>
+          <text x="100" y="184" text-anchor="middle" style="font-family:Manrope,sans-serif;font-size:7px;fill:#74636b">50 ml · 1.7 fl oz</text>
+          <rect x="60" y="72" width="10" height="160" rx="5" fill="#fff" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="thumbs" aria-hidden="true">
+        <div style="background:radial-gradient(circle at 50% 35%,#fff3ea,#efcdba);box-shadow:inset 0 0 0 2px #2b1e25"></div>
+        <div style="background:radial-gradient(circle at 30% 30%,#fff 0%,#f9e7ee 35%,#f1d3de 70%,#e8c3d2 100%)">The texture</div>
+        <div style="background:#fff">Made to be tried first</div>
+      </div>
+    </div>
+    <div class="info">
+      <span class="kicker">For oily and combination skin</span>
+      <h1 class="serif">{name}</h1>
+      <div class="price" id="price">$24.00</div>
+      <p class="desc">{listing}</p>
+      <fieldset>
+        <legend>Size</legend>
+        <div class="sizes">
+          <button type="button" aria-pressed="true" data-price="$24.00">30 ml · $24</button>
+          <button type="button" aria-pressed="false" data-price="$34.00">50 ml · $34</button>
+        </div>
+      </fieldset>
+      <div class="buy">
+        <div class="qty"><button type="button" aria-label="One less" data-step="-1">−</button><span id="qty">1</span><button type="button" aria-label="One more" data-step="1">+</button></div>
+        <button type="button" class="add">Add to bag</button>
+      </div>
+      <section class="sp" aria-label="Test it on half your face">
+        <div>
+          <div class="sp-head">
+            <svg width="38" height="38" viewBox="0 0 32 32" aria-hidden="true">
+              <defs><linearGradient id="sp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F48FB1"/><stop offset=".55" stop-color="#E3507E"/><stop offset="1" stop-color="#B467E0"/></linearGradient></defs>
+              <path d="M15 2.6C8.6 3 4.8 8.3 4.8 14.6c0 7 4.4 13 10.2 14.9Z" fill="url(#sp)"/>
+              <path d="M17.2 3.9c5.4.9 8.6 5.4 8.6 10.7 0 6-3.5 11-8.6 13.2Z" fill="none" stroke="#2B1E25" stroke-width="2.4" stroke-linejoin="round"/>
+              <path d="M9.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="#FBF6F1" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M19.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="#2B1E25" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <div><div class="serif">Not sure it works <em>on you</em>?</div><small>Test the sample on half your face before you buy.</small></div>
+          </div>
+          <a class="try" href="{link}">Test it on half your face</a>
+          <div class="sp-foot">Split-face trial by SideProof, measured by YouCam Skin AI. Photos are measured and dropped.</div>
+        </div>
+      </section>
+      <div>
+        <details open><summary>What it does</summary><p>{listing}</p></details>
+        <details><summary>How to use</summary><p>Morning and evening, on clean skin. A pea-sized amount covers the face.</p></details>
+        <details><summary>Shipping and returns</summary><p>This is a demo shop: nothing here can be bought.</p></details>
+      </div>
     </div>
   </div>
 </main>
+<footer>{shop} is a made-up brand for the SideProof demo.</footer>
+<script>
+document.querySelectorAll('.sizes button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('.sizes button').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+    document.getElementById('price').textContent = b.dataset.price;
+  });
+});
+document.querySelectorAll('.qty button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var q = document.getElementById('qty'); q.textContent = Math.max(1, Number(q.textContent) + Number(b.dataset.step));
+  });
+});
+</script>
 </body>
 </html>
