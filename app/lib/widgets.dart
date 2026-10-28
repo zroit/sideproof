@@ -409,3 +409,128 @@ class _YouCamViewState extends State<YouCamView> {
     ]);
   }
 }
+
+/// Two pictures of the same face; drag across to wipe from one to the other. It sweeps once on
+/// its own so it is clear there is something to drag; a close-up shows where the claim acts.
+class CompareSlider extends StatefulWidget {
+  const CompareSlider({super.key, required this.before, required this.after, required this.beforeLabel, required this.afterLabel, this.closeUp});
+  final ImageProvider before, after;
+  final String beforeLabel, afterLabel;
+  final (double scale, Alignment focus, String label)? closeUp;
+
+  @override
+  State<CompareSlider> createState() => _CompareSliderState();
+}
+
+class _CompareSliderState extends State<CompareSlider> with SingleTickerProviderStateMixin {
+  late final AnimationController _sweep = AnimationController(vsync: this, duration: const Duration(milliseconds: 2600));
+  double _pos = 0.5;
+  bool _touched = false;
+  late bool _zoom = widget.closeUp != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _sweep.addListener(() {
+      if (!_touched) setState(() => _pos = 0.5 + 0.38 * sin(_sweep.value * pi * 2) * (1 - _sweep.value * 0.3));
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!MediaQuery.of(context).disableAnimations && !_sweep.isAnimating && _sweep.value == 0) {
+      Future.delayed(const Duration(milliseconds: 600), () => mounted && !_touched ? _sweep.forward() : null);
+    }
+  }
+
+  @override
+  void dispose() {
+    _sweep.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final c = widget.closeUp;
+    Widget lens(Widget child) => _zoom && c != null ? Transform.scale(scale: c.$1, alignment: c.$2, child: child) : child;
+    Widget corner(String text, bool right) => Positioned(
+          top: 10,
+          left: right ? null : 10,
+          right: right ? 10 : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: right ? Sp.cobalt : Colors.white.withValues(alpha: 0.88), borderRadius: BorderRadius.circular(99)),
+            child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: right ? Colors.white : Sp.ink)),
+          ),
+        );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: LayoutBuilder(builder: (context, box) {
+          void drag(double dx) => setState(() {
+                _touched = true;
+                _pos = (dx / box.maxWidth).clamp(0.0, 1.0);
+              });
+          return GestureDetector(
+            onHorizontalDragStart: (d) => drag(d.localPosition.dx),
+            onHorizontalDragUpdate: (d) => drag(d.localPosition.dx),
+            onTapDown: (d) => drag(d.localPosition.dx),
+            child: Stack(children: [
+              lens(Image(image: widget.before, width: double.infinity, fit: BoxFit.fitWidth)),
+              Positioned.fill(child: ClipRect(clipper: _FromLeft(_pos), child: lens(Image(image: widget.after, fit: BoxFit.fill)))),
+              Positioned(
+                left: _pos * box.maxWidth - 1.5,
+                top: 0,
+                bottom: 0,
+                child: Container(width: 3, color: Colors.white),
+              ),
+              Positioned(
+                left: _pos * box.maxWidth - 20,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 10)]),
+                    child: const Icon(Icons.compare_arrows, size: 22, color: Sp.ink),
+                  ),
+                ),
+              ),
+              corner(widget.beforeLabel, false),
+              corner(widget.afterLabel, true),
+            ]),
+          );
+        }),
+      ),
+      if (c != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: SegmentedButton<bool>(
+            segments: [ButtonSegment(value: true, label: Text(c.$3)), const ButtonSegment(value: false, label: Text('Whole face'))],
+            selected: {_zoom},
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(foregroundColor: scheme.onSurface),
+            onSelectionChanged: (s) => setState(() => _zoom = s.first),
+          ),
+        ),
+    ]);
+  }
+}
+
+class _FromLeft extends CustomClipper<Rect> {
+  _FromLeft(this.pos);
+  final double pos;
+  @override
+  Rect getClip(Size s) => Rect.fromLTRB(s.width * pos, 0, s.width, s.height);
+  @override
+  bool shouldReclip(covariant _FromLeft old) => old.pos != pos;
+}
+
+/// Where to look closely for a claim: the forehead for shine, a cheek on the treated half for
+/// redness, pores and spots.
+(double, Alignment, String) closeUpFor(List<String> concerns, bool treatedLeft) => concerns.contains('oiliness')
+    ? (2.2, const Alignment(0, -0.56), 'Close-up: forehead')
+    : (2.3, Alignment(treatedLeft ? -0.36 : 0.36, 0.12), 'Close-up: cheek');

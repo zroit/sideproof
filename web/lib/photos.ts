@@ -8,6 +8,7 @@ export type Saved = {
   baselineOverlays?: Record<string, string>;
   midline?: [[number, number], [number, number]];
   promise?: string;
+  note?: string; // a demo trial says what was staged
 };
 
 const DB = "sideproof", STORE = "photos";

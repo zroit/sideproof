@@ -19,11 +19,12 @@ class _Pics {
 final Map<String, _Pics> _pics = {};
 
 class TrialScreen extends StatefulWidget {
-  const TrialScreen({super.key, required this.api, this.trialId, this.initial, this.demo = false});
+  const TrialScreen({super.key, required this.api, this.trialId, this.initial, this.demo = false, this.demoId = ''});
   final Api api;
   final String? trialId;
   final Trial? initial;
   final bool demo;
+  final String demoId;
 
   @override
   State<TrialScreen> createState() => _TrialScreenState();
@@ -50,7 +51,7 @@ class _TrialScreenState extends State<TrialScreen> {
 
   Future<void> _load() async {
     try {
-      final t = widget.demo ? await widget.api.demo() : await widget.api.trial(widget.trialId!);
+      final t = widget.demo ? await widget.api.demo(widget.demoId) : await widget.api.trial(widget.trialId!);
       setState(() => _t = t);
       _poll?.cancel();
       if (t.thinking) _poll = Timer(const Duration(seconds: 3), _load);     // the agent is still deciding
@@ -145,7 +146,7 @@ class _TrialScreenState extends State<TrialScreen> {
               onRefresh: _load,
               child: Column560(
                 child: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 32), children: [
-                  if (widget.demo) const _Note('Demo trial: YouCam\'s sample face, with a digital matte filter on one half playing the product.'),
+                  if (widget.demo) _Note((t.media?['note'] as String?) ?? 'A finished trial recorded through the real API on one of YouCam\'s sample faces.'),
                   _header(t),
                   const SizedBox(height: 14),
                   TrialTimeline(step: _stepOf(t), notes: [

@@ -42,7 +42,13 @@ class Api {
 
   Future<Trial> trial(String id) async => Trial(_decode(await http.get(_u('/api/trials/$id'), headers: _headers)));
 
-  Future<Trial> demo() async => Trial(_decode(await http.get(_u('/api/demo'))));
+  Future<Trial> demo([String id = '']) async => Trial(_decode(await http.get(_u('/api/demo${id.isEmpty ? '' : '?id=$id'}'))));
+
+  /// The finished demo trials, newest first.
+  Future<List<Trial>> demos() async {
+    final list = _decode(await http.get(_u('/api/demos'))) as List;
+    return Future.wait([for (final d in list) demo(d['id'] as String)]);
+  }
 
   Future<Map<String, dynamic>> product(String code) async => _decode(await http.get(_u('/api/products/$code')));
 

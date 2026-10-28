@@ -83,7 +83,8 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const api = {
   trials: () => call<{ id: string; product: string; status: string; created_at: number }[]>("/api/trials"),
   trial: (id: string) => call<Trial>(`/api/trials/${id}`),
-  demo: () => call<Trial>("/api/demo"),
+  demo: (id = "") => call<Trial>(`/api/demo${id ? `?id=${encodeURIComponent(id)}` : ""}`),
+  demos: () => call<{ id: string; product: string; cover: string | null }[]>("/api/demos"),
   product: (code: string) => call<{ code: string; shop: string; name: string }>(`/api/products/${code}`),
   create: (fields: { product?: string; listing?: string; code?: string }, label?: Blob) => {
     const form = new FormData();

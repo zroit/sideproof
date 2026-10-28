@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import type { ConcernStats, Trial } from "@/lib/api";
 import { statusWords } from "@/lib/api";
 import type { Saved } from "@/lib/photos";
+import { closeUpFor } from "@/lib/demo";
 import { Compare, SplitPhoto } from "./photo";
 import { ClaimPill, EffectChart, Timeline, VerdictDisc, VerdictPill } from "./ui";
 
@@ -35,7 +36,7 @@ export function TrialView({ trial: t, pics, actions, demo = false }: { trial: Tr
   return (
     <div className="trial">
       <header className="trial-head">
-        {demo && <p className="note">A finished trial recorded through the real API on YouCam&apos;s own sample face, with a digital matte filter on one half playing the product.</p>}
+        {demo && <p className="note">{pics.note ?? "A finished trial recorded through the real API on one of YouCam's sample faces."}</p>}
         <h1>{t.product}</h1>
         <div className="meta">
           <span className="chip">{statusWords(t.status)}</span>
@@ -92,7 +93,7 @@ export function TrialView({ trial: t, pics, actions, demo = false }: { trial: Tr
           <h2>Promise and proof</h2>
           <div className="two">
             <div>
-              <Compare before={pics.baseline} after={pics.promise} beforeLabel="Before" afterLabel="The promise" alt="The baseline photo and YouCam's simulation of the claims" />
+              <Compare before={pics.baseline} after={pics.promise} beforeLabel="Before" afterLabel="The promise" alt="The baseline photo and YouCam's simulation of the claims" closeUp={closeUpFor(claimed, t.treated_image_side)} />
               <p className="caption">The promise: YouCam AI Skin Simulation shows the claimed improvement on this face. Drag to compare.</p>
             </div>
             {promiseConcern && (

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, media, statusWords, type Trial } from "@/lib/api";
-import { demoPics } from "@/lib/demo";
+import { api, statusWords, type Trial } from "@/lib/api";
+import type { Saved } from "@/lib/photos";
+import { closeUpFor, demoPics, span } from "@/lib/demo";
 import { Art } from "@/components/art";
 import { Compare, SplitPhoto } from "@/components/photo";
 import { EffectChart, Mark, Nav, VerdictPill } from "@/components/ui";
@@ -19,17 +20,44 @@ const STEPS = [
 
 
 export default function Home() {
-  const [demo, setDemo] = useState<Trial | null>(null);
+  const [demos, setDemos] = useState<Trial[]>([]);
+  const [pick, setPick] = useState<number | null>(null);
+  const [pickPromise, setPickPromise] = useState<number | null>(null);
   const [mine, setMine] = useState<{ id: string; product: string; status: string }[]>([]);
   useEffect(() => {
-    api.demo().then(setDemo, () => {});
+    api.demos().then((list) => Promise.all(list.map((d) => api.demo(d.id)))).then(setDemos, () => {});
     api.trials().then(setMine, () => {});
   }, []);
+  // The hero opens on a trial whose claim came out supported (its map tells the story); the
+  // promise section opens on another one, so both faces show at first glance.
+  const heroDefault = Math.max(0, demos.findIndex((d) => Object.values(d.stats.concerns).some((c) => c.verdict === "better")));
+  const heroIndex = pick ?? heroDefault;
+  const promiseIndex = pickPromise ?? (demos.length > 1 ? (heroDefault + 1) % demos.length : 0);
+  const demo = demos[heroIndex] ?? null;
+  const pdemo = demos[promiseIndex] ?? null;
+  const ppics: Saved = pdemo ? demoPics(pdemo) : {};
+  const pclaimed = (pdemo?.plan.claims ?? []).map((c) => c.concern).filter(Boolean) as string[];
+  const pshown = Object.values(pdemo?.stats.concerns ?? {}).find((c) => pclaimed.includes(c.concern) && c.series?.length);
 
-  const pics = demo ? demoPics(demo) : { latest: media("latest.jpg"), baseline: media("baseline.jpg"), promise: media("promise.jpg"), overlays: { oiliness: media("latest-oiliness.png") } };
+  const pics: Saved = demo ? demoPics(demo) : {};
   const treated = demo?.treated_image_side ?? "img_right";
-  const oil = demo?.stats.concerns.oiliness;
-  const last = oil?.series?.[oil.series.length - 1]; // the trial's own numbers at 8 h
+  const claimed = (demo?.plan.claims ?? []).map((c) => c.concern).filter(Boolean) as string[];
+  // The concern to show: the first claimed one YouCam mapped; its numbers are the trial's own.
+  const shown = Object.values(demo?.stats.concerns ?? {}).find((c) => claimed.includes(c.concern) && pics.overlays?.[c.concern]);
+  const last = shown?.series?.[shown.series.length - 1];
+  const oil = pshown;
+  const switcher = (current: number, choose: (i: number) => void) =>
+    demos.length > 1 && (
+      <div className="demo-switch">
+        {demos.map((d, i) => (
+          <button key={d.id} aria-pressed={i === current} onClick={() => choose(i)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={demoPics(d).latest} alt="" />
+            <span>{d.product}<small>{span(d)}</small></span>
+          </button>
+        ))}
+      </div>
+    );
 
   return (
     <>
@@ -51,15 +79,20 @@ export default function Home() {
             </p>
           </div>
           <div className="hero-photo">
-            <SplitPhoto
-              src={pics.latest!}
-              alt="YouCam's sample face eight hours into a trial, with YouCam's oiliness map"
-              overlay={pics.overlays?.oiliness}
+            {switcher(heroIndex, setPick)}
+            {pics.latest ? <SplitPhoto
+              key={demo?.id}
+              src={pics.latest}
+              alt={`One of YouCam's sample faces at the end of a trial, with YouCam's ${shown?.label.toLowerCase() ?? "oiliness"} map`}
+              overlay={pics.overlays?.[shown?.concern ?? "oiliness"]}
               midline={pics.midline}
               treated={treated}
-              labels={last ? { treated: `Treated half ${last.treated.toFixed(1)}% oily`, control: `Control half ${last.control.toFixed(1)}% oily` } : undefined}
-            />
-            <p className="caption">YouCam&apos;s oiliness map, 8 hours after a matte gel went on one half. YouCam&apos;s sample face; the gel is a digital filter.</p>
+              labels={last ? { treated: `Treated ${last.treated.toFixed(1)}%`, control: `Control ${last.control.toFixed(1)}%` } : undefined}
+            /> : <div className="skeleton" />}
+            <p className="caption">
+              {shown ? `YouCam's ${shown.label.toLowerCase()} map ${demo ? span(demo) : ""} in: the share of each half YouCam marked. ` : ""}
+              {pics.note ?? ""}
+            </p>
           </div>
         </section>
 
@@ -83,22 +116,23 @@ export default function Home() {
             Before you start, YouCam AI Skin Simulation shows what the claims promise on your own face. Then the trial measures what
             actually happened.
           </p>
+          {switcher(promiseIndex, setPickPromise)}
           <div className="two panel">
             <div>
-              <Compare before={pics.baseline!} after={pics.promise!} beforeLabel="Before" afterLabel="The promise" alt="The sample face and YouCam's simulation of less shine" />
-              <p className="caption">&ldquo;Controls shine for up to 8 hours&rdquo;, simulated by YouCam. Drag to compare.</p>
+              {ppics.baseline && ppics.promise ? <Compare key={pdemo?.id} before={ppics.baseline} after={ppics.promise} beforeLabel="Before" afterLabel="The promise" alt="The sample face and YouCam's simulation of the claims" closeUp={closeUpFor(pclaimed, pdemo?.treated_image_side ?? "img_right")} /> : <div className="skeleton" />}
+              <p className="caption">The claims of {pdemo?.product ?? "the product"}, drawn on this face by YouCam AI Skin Simulation. Drag to compare.</p>
             </div>
             <div className="proof">
               {oil ? (
                 <>
-                  <div className="row"><h3>Oiliness, treated half against control</h3><VerdictPill verdict={oil.verdict} /></div>
+                  <div className="row"><h3>{oil.label}, treated half against control</h3><VerdictPill verdict={oil.verdict} /></div>
                   <EffectChart stats={oil} />
-                  <p className="caption">Measured by YouCam AI Skin Analysis at 1, 4 and 8 hours. The effect stayed far past the noise band, so the claim came out supported.</p>
+                  <p className="caption">Measured by YouCam AI Skin Analysis at every scan. Only a change past the noise band counts.</p>
                 </>
               ) : (
                 <p className="muted">Loading the measured result…</p>
               )}
-              <Link href="/demo/" className="btn btn-ghost">Open the whole trial</Link>
+              <Link href={pdemo ? `/demo/?id=${pdemo.id}` : "/demo/"} className="btn btn-ghost">Open the whole trial</Link>
             </div>
           </div>
         </section>
