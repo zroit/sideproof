@@ -16,8 +16,12 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 64px;display:grid;gap:28px;
 .tube{width:34%;height:62%;border-radius:22px 22px 10px 10px;background:linear-gradient(90deg,#fff,#efe9e2);box-shadow:0 18px 40px #0002;display:grid;place-items:center;text-align:center;font-size:12px;color:#5b534b;padding:10px}
 h1{font-size:30px;line-height:1.15;margin:4px 0 8px}.mute{color:var(--mute)}.price{font-size:20px;margin:10px 0 18px}
 .btn{display:block;text-align:center;padding:14px;border-radius:12px;text-decoration:none;font-weight:650}
-.buy{background:var(--ink);color:var(--bg)}.try{margin-top:10px;border:2px solid var(--accent);color:var(--accent)}
-.half{margin-top:18px;padding:14px;border:1px dashed var(--line);border-radius:12px;font-size:14px}
+.buy{background:var(--ink);color:var(--bg)}
+/* The SideProof widget: the only part of this page in SideProof's colours. */
+.sp{margin-top:18px;padding:16px;border-radius:16px;background:#f2f4f3;color:#15232a;border:1px solid #c5cdcb}
+@media (prefers-color-scheme:dark){.sp{background:#172228;color:#e8eeec;border-color:#3b4a4f}}
+.sp-head{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}.sp p{margin:8px 0 12px;font-size:14px;line-height:1.5}
+.try{background:#2f5bea;color:#fff}.sp-foot{margin-top:10px;font-size:12px;opacity:.7}
 ul{padding-left:18px}
 </style>
 </head>
@@ -31,10 +35,13 @@ ul{padding-left:18px}
     <div class="price">BDT 1,250</div>
     <p>{listing}</p>
     <a class="btn buy" href="#">Add to cart</a>
-    <a class="btn try" href="{link}">Not sure? Test it on half your face</a>
-    <div class="half"><b>How the split-face test works.</b> Put the sample on one half of your face, keep the other half
-      as it is, and take a photo now and then. YouCam Skin AI measures both halves and tells you if this product did
-      anything for your skin, before you buy the full size.</div>
+    <div class="sp">
+      <div class="sp-head"><svg class="mark" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true"><path d="M15 3A13 13 0 0 0 15 29Z" fill="#2F5BEA"/><path d="M18.4 4.4A11.6 11.6 0 0 1 18.4 27.6Z" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/></svg>Not sure it works on you?</div>
+      <p>Test the sample on half your face first. YouCam Skin AI measures the treated half against the other half,
+        so you see what this product did for your skin before you buy the full size.</p>
+      <a class="btn try" href="{link}">Test it on half your face</a>
+      <div class="sp-foot">Split-face trial by SideProof. Photos are measured and dropped.</div>
+    </div>
   </div>
 </main>
 </body>

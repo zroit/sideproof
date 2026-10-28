@@ -69,8 +69,8 @@ def outcomes(con, code):
 
 
 CSS = '''
-:root{--bg:#f6f4f1;--card:#fff;--ink:#1d1b19;--mute:#6b655e;--line:#e4dfd8;--good:#2f7d5b;--bad:#b4442f;--mid:#c9c1b6;--accent:#7a4bd0}
-@media (prefers-color-scheme:dark){:root{--bg:#141312;--card:#1d1c1a;--ink:#eeeae4;--mute:#a39c93;--line:#34312d;--mid:#57524b}}
+:root{--bg:#f2f4f3;--card:#fff;--ink:#15232a;--mute:#5d6b70;--line:#dde3e2;--good:#1f8a5b;--bad:#c2412d;--mid:#c5cdcb;--accent:#2f5bea}
+@media (prefers-color-scheme:dark){:root{--bg:#0f171b;--card:#172228;--ink:#e8eeec;--mute:#a5b2b5;--line:#2a383e;--mid:#3b4a4f;--accent:#8aa4ff}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
 main{max-width:980px;margin:0 auto;padding:24px 16px 64px}h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 10px}
 .mute{color:var(--mute)}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
@@ -84,7 +84,7 @@ form.inline{display:flex;gap:8px;align-items:end;flex-wrap:wrap}form.inline labe
 .g{background:var(--good)}.m{background:var(--mid)}.b{background:var(--bad)}code{font-size:13px;word-break:break-all}
 .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line)}
 .backed{color:var(--good);border-color:var(--good)}.not.backed,.notbacked{color:var(--bad);border-color:var(--bad)}
-a{color:var(--accent)}
+a{color:var(--accent)}h1{display:flex;align-items:center;gap:10px}.mark{flex:none}
 '''
 
 
@@ -180,7 +180,7 @@ def home(con, base, read_only):
 <label>Shop<input name="shop" required></label><label>Product<input name="name" required></label>
 <label style="flex-basis:100%">Listing text (the claims as the shop sells it)<textarea name="listing" rows="3" required></textarea></label><button>Add product</button></form>'''
     note = ' Read-only view.' if read_only else ''
-    body = f'''<h1>SideProof</h1><p class="mute">Split-face product trials on YouCam Skin AI. Numbers only: no photo is kept.{note}</p>
+    body = f'''<h1><svg class="mark" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true"><path d="M15 3A13 13 0 0 0 15 29Z" fill="#2F5BEA"/><path d="M18.4 4.4A11.6 11.6 0 0 1 18.4 27.6Z" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/></svg>SideProof</h1><p class="mute">Split-face product trials on YouCam Skin AI. Numbers only: no photo is kept.{note}</p>
 <div class="row"><div class="card"><div class="mute">YouCam units left</div><div class="big">{balance}</div></div>
 <div class="card"><div class="mute">Used in the last 24 h</div><div class="big">{used} / {cap}</div></div>
 <div class="card"><div class="mute">Trials</div><div class="big">{n_trials}</div></div></div>
