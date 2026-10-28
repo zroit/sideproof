@@ -90,9 +90,35 @@ class _TrialScreenState extends State<TrialScreen> {
     }
   }
 
+  /// The camera, or a photo already on the phone (YouCam's sample faces, say).
+  Future<ImageSource?> _source() => showModalBottomSheet<ImageSource>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined, color: Sp.rose),
+            title: const Text('Take a photo'),
+            onTap: () => Navigator.pop(context, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined, color: Sp.rose),
+            title: const Text('Choose from the gallery'),
+            onTap: () => Navigator.pop(context, ImageSource.gallery),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+
   Future<void> _scan() async {
+    final source = await _source();
+    if (source == null) return;
     final f = await ImagePicker().pickImage(
-      source: ImageSource.camera,
+      source: source,
       preferredCameraDevice: CameraDevice.front,
       maxWidth: 2048,
       imageQuality: 92,

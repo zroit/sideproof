@@ -95,7 +95,7 @@ export default function TrialPage() {
 
   const camera = (text: string) => (
     <label className="file">
-      <input ref={file} type="file" accept="image/*" capture="user" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPhoto(f); }} />
+      <input ref={file} type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPhoto(f); }} />
       <span className="btn">{text}</span>
     </label>
   );

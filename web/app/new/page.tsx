@@ -67,7 +67,7 @@ export default function NewTrial() {
               <label>Product name<input value={product} onChange={(e) => setProduct(e.target.value)} required={!code} placeholder="Matte Balance Gel" /></label>
               <label>What does it claim?<textarea value={listing} onChange={(e) => setListing(e.target.value)} rows={4} placeholder="Paste the claims from the box or the shop page" /></label>
               <label className="file">
-                <input type="file" accept="image/*" capture="environment" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setLabel(await shrink(f, 2048, 0.9)); }} />
+                <input type="file" accept="image/*" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setLabel(await shrink(f, 2048, 0.9)); }} />
                 <span className="btn btn-ghost">{label ? "Change the label photo" : "Add a photo of the label"}</span>
               </label>
               {/* eslint-disable-next-line @next/next/no-img-element */}
