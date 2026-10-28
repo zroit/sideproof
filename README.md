@@ -86,7 +86,7 @@ App:
 
     cd app
     flutter test
-    flutter build web                                   # served by the backend via SIDEPROOF_WEB_DIR
+    flutter build web && rsync -a --delete --exclude canvaskit build/web/ ../web-dist/   # the image serves web-dist/
     flutter build apk --dart-define=API_BASE=https://your-backend
 
 ## Licence
