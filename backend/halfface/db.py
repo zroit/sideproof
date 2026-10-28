@@ -31,11 +31,20 @@ DEFAULTS = {
 }
 
 
+# Columns added after a table first shipped; connect() adds any that an older file lacks.
+ADDED = {'trials': {'skin_type': 'text'}, 'products': {'audit': 'text'}}
+
+
 def connect():
     con = sqlite3.connect(config.DB_PATH, timeout=10, check_same_thread=False)
     con.row_factory = sqlite3.Row
     con.execute('pragma journal_mode=wal')
     con.executescript(SCHEMA)
+    for table, cols in ADDED.items():
+        have = {r['name'] for r in con.execute(f'pragma table_info({table})')}
+        for col, kind in cols.items():
+            if col not in have:
+                con.execute(f'alter table {table} add column {col} {kind}')
     return con
 
 

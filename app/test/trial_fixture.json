@@ -1,0 +1,378 @@
+{
+ "id": "kp1o-O7GbDjv",
+ "product": "Shine Control Gel",
+ "code": null,
+ "plan": {
+  "product": "Shine Control Gel",
+  "claims": [
+   {
+    "text": "Controls shine for up to 8 hours",
+    "concern": "oiliness"
+   },
+   {
+    "text": "Oil-free mattifying",
+    "concern": "oiliness"
+   },
+   {
+    "text": "Minimises the look of pores",
+    "concern": "pore"
+   },
+   {
+    "text": "Hydrates without grease",
+    "concern": "moisture"
+   }
+  ],
+  "concerns": [
+   "oiliness",
+   "pore",
+   "moisture"
+  ],
+  "days": 28,
+  "scan_every_hours": 24,
+  "patch_first": false,
+  "safe_to_try": true,
+  "cautions": [
+   "Stop using it if you get stinging, burning or redness that does not fade.",
+   "Keep the rest of your routine the same on both halves, and scan at the same time and in the same light each day."
+  ],
+  "summary": "Put the gel on one half of your face and nothing on the other for 28 days, scanning once a day. Oiliness and dryness can change within a day or two. Pores need weeks, so early pore results are too early to tell. One scan a day costs 9 units, well within today's 150."
+ },
+ "status": "done",
+ "decision": {
+  "state": "done",
+  "action": "continue",
+  "message": "Your first scan with the gel already shows less oiliness and a little less dryness on the treated side. It is a single reading taken right after starting, so it is too early to tell if that lasts, and pores need weeks to show anything. Keep your routine the same on both halves and scan again tomorrow at the same time and in the same light.",
+  "next_scan_in_hours": 24,
+  "allowed": [
+   "continue"
+  ]
+ },
+ "verdict": {
+  "headline": "Day 0: first scan is in. Oiliness and dryness look better on the treated side, but this is a single scan, so it is too early to judge the product's claims.",
+  "concerns": [
+   {
+    "concern": "Oiliness",
+    "verdict": "better",
+    "text": "Treated side reads 2.6 and control reads 10.5. The treated side started oilier (12.8 vs 10.0). The effect is about 10.8 points better than that starting gap, well past the 1.25 threshold. This is one scan at hour 0, so it shows the first reading, not how long it lasts."
+   },
+   {
+    "concern": "Visible pores",
+    "verdict": "unclear",
+    "text": "No difference yet. Both sides read 0.0 before and after. Pores change over weeks, so too early to tell."
+   },
+   {
+    "concern": "Dryness",
+    "verdict": "better",
+    "text": "Treated side went from 48.9 to 46.8 while the control stayed about the same (46.2 to 46.5). That is 2.4 points better than the starting gap, past the 1.25 threshold. It is one scan, so keep watching before trusting it."
+   }
+  ],
+  "claims": [
+   {
+    "claim": "Controls shine for up to 8 hours",
+    "result": "not measured: one scan a day cannot show an 8 hour window"
+   },
+   {
+    "claim": "Oil-free mattifying",
+    "result": "too early: oiliness looks lower on the treated side, but it is one scan, and a skin scan cannot check 'oil-free'"
+   },
+   {
+    "claim": "Minimises the look of pores",
+    "result": "too early: pores need weeks and nothing has changed yet"
+   },
+   {
+    "claim": "Hydrates without grease",
+    "result": "too early: dryness and oiliness both look better on the treated side, but from one scan only"
+   }
+  ],
+  "next": "Keep scanning once a day for the 28 days, at the same time and in the same light, with the same routine on both halves. To test the 8 hour claim, add a scan about 8 hours after applying the gel. Stop using it if you get stinging, burning or redness that does not fade."
+ },
+ "skin_type": null,
+ "created_at": 1793159581.4935236,
+ "started_at": 1793159584.003937,
+ "treated_side": "right",
+ "treated_image_side": "img_left",
+ "hours_in": 0.2,
+ "stats": {
+  "concerns": {
+   "oiliness": {
+    "concern": "oiliness",
+    "label": "Oiliness",
+    "baseline_scans": 2,
+    "asymmetry": 2.8,
+    "noise": 0.5,
+    "threshold": 1.25,
+    "series": [
+     {
+      "phase": "baseline",
+      "hours": 0.0,
+      "treated": 12.807,
+      "control": 10.002,
+      "effect": 0.0
+     },
+     {
+      "phase": "baseline",
+      "hours": 0.0,
+      "treated": 12.807,
+      "control": 10.002,
+      "effect": 0.0
+     },
+     {
+      "phase": "trial",
+      "hours": 0.0,
+      "treated": 2.597,
+      "control": 10.544,
+      "effect": -10.75
+     }
+    ],
+    "state": "measured",
+    "effect": -10.75,
+    "verdict": "better"
+   },
+   "pore": {
+    "concern": "pore",
+    "label": "Visible pores",
+    "baseline_scans": 2,
+    "asymmetry": 0.0,
+    "noise": 0.5,
+    "threshold": 1.25,
+    "series": [
+     {
+      "phase": "baseline",
+      "hours": 0.0,
+      "treated": 0.0,
+      "control": 0.0,
+      "effect": 0.0
+     },
+     {
+      "phase": "baseline",
+      "hours": 0.0,
+      "treated": 0.0,
+      "control": 0.0,
+      "effect": 0.0
+     },
+     {
+      "phase": "trial",
+      "hours": 0.0,
+      "treated": 0.0,
+      "control": 0.0,
+      "effect": 0.0
+     }
+    ],
+    "state": "measured",
+    "effect": 0.0,
+    "verdict": "unclear"
+   },
+   "moisture": {
+    "concern": "moisture",
+    "label": "Dryness",
+    "baseline_scans": 2,
+    "asymmetry": 2.75,
+    "noise": 0.5,
+    "threshold": 1.25,
+    "series": [
+     {
+      "phase": "baseline",
+      "hours": 0.0,
+      "treated": 48.944,
+      "control": 46.19,
+      "effect": 0.0
+     },
+     {
+      "phase": "baseline",
+      "hours": 0.0,
+      "treated": 48.944,
+      "control": 46.19,
+      "effect": 0.0
+     },
+     {
+      "phase": "trial",
+      "hours": 0.0,
+      "treated": 46.837,
+      "control": 46.496,
+      "effect": -2.41
+     }
+    ],
+    "state": "measured",
+    "effect": -2.41,
+    "verdict": "better"
+   }
+  },
+  "harm": []
+ },
+ "scans": [
+  {
+   "id": 1,
+   "phase": "baseline",
+   "at": 1793159583.547155,
+   "checks": {
+    "face_width": 0.677,
+    "yaw": 0.517,
+    "roll": -0.4,
+    "light_left": 148.0,
+    "light_right": 142.0,
+    "sharpness": 172.2
+   }
+  },
+  {
+   "id": 2,
+   "phase": "baseline",
+   "at": 1793159583.9916365,
+   "checks": {
+    "face_width": 0.677,
+    "yaw": 0.517,
+    "roll": -0.4,
+    "light_left": 148.0,
+    "light_right": 142.0,
+    "sharpness": 172.2
+   }
+  },
+  {
+   "id": 3,
+   "phase": "trial",
+   "at": 1793159584.4254665,
+   "checks": {
+    "face_width": 0.676,
+    "yaw": 0.521,
+    "roll": -0.3,
+    "light_left": 141.0,
+    "light_right": 142.0,
+    "sharpness": 141.0
+   }
+  }
+ ],
+ "agent_log": [
+  {
+   "at": 1793159555.8749115,
+   "job": "plan",
+   "thought": "I need the concern catalog to map the claims to measurable concerns.",
+   "tool": "concern_catalog"
+  },
+  {
+   "at": 1793159563.5887215,
+   "job": "plan",
+   "thought": "I need the unit budget to pick a sensible scan interval.",
+   "tool": "unit_budget"
+  },
+  {
+   "at": 1793159581.4921088,
+   "job": "plan",
+   "thought": "Claims map to oiliness, pore and moisture. Niacinamide and zinc PCA are not strong actives, so no redness check is needed.",
+   "final": {
+    "product": "Shine Control Gel",
+    "claims": [
+     {
+      "text": "Controls shine for up to 8 hours",
+      "concern": "oiliness"
+     },
+     {
+      "text": "Oil-free mattifying",
+      "concern": "oiliness"
+     },
+     {
+      "text": "Minimises the look of pores",
+      "concern": "pore"
+     },
+     {
+      "text": "Hydrates without grease",
+      "concern": "moisture"
+     }
+    ],
+    "concerns": [
+     "oiliness",
+     "pore",
+     "moisture"
+    ],
+    "days": 28,
+    "scan_every_hours": 24,
+    "patch_first": false,
+    "safe_to_try": true,
+    "cautions": [
+     "Stop using it if you get stinging, burning or redness that does not fade.",
+     "Keep the rest of your routine the same on both halves, and scan at the same time and in the same light each day."
+    ],
+    "summary": "Put the gel on one half of your face and nothing on the other for 28 days, scanning once a day. Oiliness and dryness can change within a day or two. Pores need weeks, so early pore results are too early to tell. One scan a day costs 9 units, well within today's 150."
+   },
+   "rejected": null
+  },
+  {
+   "at": 1793159590.362502,
+   "job": "next_step",
+   "thought": "A scan was just added, so I'll check the trial stats first.",
+   "tool": "trial_stats"
+  },
+  {
+   "at": 1793159597.6238458,
+   "job": "next_step",
+   "thought": "The scan is at hour 0, so I need the plan's scan interval and cautions before advising.",
+   "tool": "trial_plan"
+  },
+  {
+   "at": 1793159609.5614712,
+   "job": "next_step",
+   "thought": "No harm flags, and the scan is the first trial reading at hour 0, so I will continue and rescan in 24 hours.",
+   "final": {
+    "action": "continue",
+    "message": "Your first scan with the gel already shows less oiliness and a little less dryness on the treated side. It is a single reading taken right after starting, so it is too early to tell if that lasts, and pores need weeks to show anything. Keep your routine the same on both halves and scan again tomorrow at the same time and in the same light.",
+    "next_scan_in_hours": 24
+   },
+   "rejected": null
+  },
+  {
+   "at": 1793159616.0658083,
+   "job": "verdict",
+   "thought": "Trial just started, so I will read the plan first to see the product, claims and concerns.",
+   "tool": "trial_plan"
+  },
+  {
+   "at": 1793159623.5191483,
+   "job": "verdict",
+   "thought": "I have the plan, so I will get the stats to see what has been measured so far.",
+   "tool": "trial_stats"
+  },
+  {
+   "at": 1793159646.6131344,
+   "job": "verdict",
+   "thought": "Only the first scan exists, so I report the verdicts as given and mark the claims as too early or not measured.",
+   "final": {
+    "headline": "Day 0: first scan is in. Oiliness and dryness look better on the treated side, but this is a single scan, so it is too early to judge the product's claims.",
+    "concerns": [
+     {
+      "concern": "Oiliness",
+      "verdict": "better",
+      "text": "Treated side reads 2.6 and control reads 10.5. The treated side started oilier (12.8 vs 10.0). The effect is about 10.8 points better than that starting gap, well past the 1.25 threshold. This is one scan at hour 0, so it shows the first reading, not how long it lasts."
+     },
+     {
+      "concern": "Visible pores",
+      "verdict": "unclear",
+      "text": "No difference yet. Both sides read 0.0 before and after. Pores change over weeks, so too early to tell."
+     },
+     {
+      "concern": "Dryness",
+      "verdict": "better",
+      "text": "Treated side went from 48.9 to 46.8 while the control stayed about the same (46.2 to 46.5). That is 2.4 points better than the starting gap, past the 1.25 threshold. It is one scan, so keep watching before trusting it."
+     }
+    ],
+    "claims": [
+     {
+      "claim": "Controls shine for up to 8 hours",
+      "result": "not measured: one scan a day cannot show an 8 hour window"
+     },
+     {
+      "claim": "Oil-free mattifying",
+      "result": "too early: oiliness looks lower on the treated side, but it is one scan, and a skin scan cannot check 'oil-free'"
+     },
+     {
+      "claim": "Minimises the look of pores",
+      "result": "too early: pores need weeks and nothing has changed yet"
+     },
+     {
+      "claim": "Hydrates without grease",
+      "result": "too early: dryness and oiliness both look better on the treated side, but from one scan only"
+     }
+    ],
+    "next": "Keep scanning once a day for the 28 days, at the same time and in the same light, with the same routine on both halves. To test the 8 hour claim, add a scan about 8 hours after applying the gel. Stop using it if you get stinging, burning or redness that does not fade."
+   },
+   "rejected": null
+  }
+ ]
+}

@@ -59,7 +59,7 @@ def state(con, t):
 def view(con, t):
     scans, stats, hours_in = state(con, t)
     return {**{k: t[k] for k in ('id', 'product', 'code', 'plan', 'status', 'decision', 'verdict', 'skin_type', 'created_at', 'started_at')},
-            'treated_side': PERSON_SIDE[t['treated']], 'hours_in': hours_in, 'stats': stats,
+            'treated_side': PERSON_SIDE[t['treated']], 'treated_image_side': t['treated'], 'hours_in': hours_in, 'stats': stats,
             'scans': [{k: s[k] for k in ('id', 'phase', 'at', 'checks')} for s in scans],
             'agent_log': db.log_of(con, t['id'])}
 
@@ -181,7 +181,7 @@ def add_scan(trial_id: str, background: BackgroundTasks, photo: UploadFile = Fil
     else:
         n = min(s['baseline_scans'] for s in stats['concerns'].values())
         msg = ('Baseline 1 of 2 saved. Take one more in a few minutes, same place, same light.' if n < 2 else
-               f'Baseline done. Now put the product on your {PERSON_SIDE[t["treated"]]} side only, then tap Start.')
+               f'Baseline done. Now put the product only on the shaded half of your face (your {PERSON_SIDE[t["treated"]]} side), then tap Start.')
         con.execute('update trials set decision = ? where id = ?', (json.dumps({'state': 'done', 'action': allowed[0], 'message': msg, 'allowed': allowed}), trial_id))
         con.commit()
     return view(con, db.trial_row(con, trial_id))

@@ -80,7 +80,7 @@ def test_a_whole_trial(client, monkeypatch):
     assert client.post(f'/api/trials/{t["id"]}/start', headers=DEV).status_code == 409
     assert send_scan(client, t['id'], 12.2, 9.6)['skin_type'] == 'V'
     t = send_scan(client, t['id'], 12.4, 9.7)
-    assert 'right side only' in t['decision']['message']
+    assert 'your right side' in t['decision']['message'] and t['treated_image_side'] == 'img_left'
     assert client.post(f'/api/trials/{t["id"]}/start', headers=DEV).json()['status'] == 'running'
 
     model.replies += [
