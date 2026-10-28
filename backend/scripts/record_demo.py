@@ -17,10 +17,12 @@ import json
 import os
 import pathlib
 import sys
-import tempfile
 import time
 
-os.environ['SIDEPROOF_DB'] = str(pathlib.Path(tempfile.mkdtemp()) / 'demo.db')
+# The recording database stays inside the project (git ignores *.db), not in /tmp.
+RECORDING_DB = pathlib.Path(__file__).resolve().parent.parent / 'demo-recording.db'
+RECORDING_DB.unlink(missing_ok=True)
+os.environ['SIDEPROOF_DB'] = str(RECORDING_DB)
 os.environ.setdefault('SIDEPROOF_LLM', 'gemini')
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
