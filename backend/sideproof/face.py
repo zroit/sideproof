@@ -99,6 +99,10 @@ class Face:
         """Mean of a per-pixel array over each half: {'img_left': x, 'img_right': y}."""
         return {'img_left': float(values[self.img_left].mean()), 'img_right': float(values[self.img_right].mean())}
 
+    def midline(self):
+        """The midline's ends, top and bottom of the photo, as fractions of width and height."""
+        return [[round(self.b / self.w, 4), 0.0], [round((self.a * self.h + self.b) / self.w, 4), 1.0]]
+
     def measure(self, masks):
         """Each concern's mask as percent coverage per half."""
         out = {}
@@ -163,3 +167,36 @@ def check(img):
     if sharp < 45:      # sample face 172, Gaussian blur r2 35; recheck on real phone photos
         issues.append('blurry')
     return face, issues, nums
+
+
+# One colour per concern for the overlays the app draws on the person's own photo.
+OVERLAY_COLOURS = {'oiliness': (255, 196, 0), 'moisture': (0, 168, 232), 'radiance': (255, 140, 60), 'redness': (232, 48, 72),
+                   'acne': (214, 40, 120), 'pore': (140, 90, 220), 'texture': (120, 120, 120), 'age_spot': (150, 90, 40),
+                   'wrinkle': (40, 160, 120), 'dark_circle_v2': (70, 70, 160), 'eye_bag': (90, 120, 180)}
+
+
+def overlays(masks, width=480):
+    """Each concern's mask as a small transparent PNG (data URL) in its colour, for the app to lay
+    over the photo it already has. Sent once with the scan's answer and never stored."""
+    import base64
+    out = {}
+    for concern, alpha in masks.items():
+        h, w = alpha.shape
+        size = (width, max(1, round(h * width / w)))
+        a = Image.fromarray((np.clip(alpha, 0, 1) * 200).astype(np.uint8)).resize(size, Image.BILINEAR)
+        rgb = Image.new('RGB', size, OVERLAY_COLOURS.get(concern, (47, 91, 234)))
+        rgb.putalpha(a)
+        buf = io.BytesIO()
+        rgb.save(buf, 'PNG', optimize=True)
+        out[concern] = 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
+    return out
+
+
+def data_url(jpeg_bytes, longest=1080):
+    """A JPEG as a data URL, scaled down so its long side is at most `longest`."""
+    import base64
+    im = Image.open(io.BytesIO(jpeg_bytes)).convert('RGB')
+    im.thumbnail((longest, longest))
+    buf = io.BytesIO()
+    im.save(buf, 'JPEG', quality=86)
+    return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode()

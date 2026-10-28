@@ -157,6 +157,7 @@ def add_scan(trial_id: str, background: BackgroundTasks, photo: UploadFile = Fil
     except YouCamError as e:
         raise HTTPException(502, f'YouCam: {e}')
     sides = found.measure(result.masks)
+    media = {'overlays': face.overlays(result.masks), 'midline': found.midline()}    # for this answer only
     del img, result.masks
     now = time.time()
     if not t['skin_type'] and db.setting(con, 'fitzpatrick') == 'on' and db.units_today(con) + cost + 10 <= int(db.setting(con, 'daily_unit_cap')):
@@ -188,7 +189,38 @@ def add_scan(trial_id: str, background: BackgroundTasks, photo: UploadFile = Fil
                f'Baseline done. Now put the product only on the shaded half of your face (your {PERSON_SIDE[t["treated"]]} side), then tap Start.')
         con.execute('update trials set decision = ? where id = ?', (json.dumps({'state': 'done', 'action': allowed[0], 'message': msg, 'allowed': allowed}), trial_id))
         con.commit()
-    return view(con, db.trial_row(con, trial_id))
+    return {**view(con, db.trial_row(con, trial_id)), 'media': media}
+
+
+# Trial concern -> AI Skin Simulation setting. Dryness has no simulation.
+SIMULATE = {'oiliness': 'oiliness', 'radiance': 'radiance', 'redness': 'redness', 'acne': 'acne', 'pore': 'pores',
+            'texture': 'texture', 'age_spot': 'spots', 'wrinkle': 'wrinkle', 'dark_circle_v2': 'dark_circle', 'eye_bag': 'eye_bags'}
+PROMISE_STRENGTH = 0.7
+
+
+@app.post('/api/trials/{trial_id}/promise')
+def promise(trial_id: str, photo: UploadFile = File(...), dev=Depends(device), con=Depends(get_db)):
+    """What the claims promise: YouCam AI Skin Simulation on the person's baseline photo, for the
+    concerns the product claims to improve. The app shows it on the treated half; nothing is kept."""
+    t = own_trial(con, trial_id, dev)
+    claimed = [c['concern'] for c in t['plan'].get('claims', []) if c.get('concern')] or t['plan']['concerns']
+    settings = {SIMULATE[c]: PROMISE_STRENGTH for c in dict.fromkeys(claimed) if c in SIMULATE}
+    if not settings:
+        raise HTTPException(422, "YouCam can't simulate what this product claims")
+    cost = 4 if len(settings) <= 4 else 6
+    if db.units_today(con) + cost > int(db.setting(con, 'daily_unit_cap')):
+        raise HTTPException(429, "today's scan budget is used up; try again tomorrow")
+    try:
+        img = face.prepare(photo.file.read())
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    try:
+        out = youcam.simulate(face.jpeg(img), settings)
+    except YouCamError as e:
+        raise HTTPException(502, f'YouCam: {e}')
+    con.execute('insert into units (at, units, what) values (?, ?, ?)', (time.time(), cost, 'simulation'))
+    con.commit()
+    return {'image': face.data_url(out, 1080), 'concerns': [c for c in dict.fromkeys(claimed) if c in SIMULATE]}
 
 
 def decide(trial_id, allowed):

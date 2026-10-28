@@ -20,6 +20,9 @@ class FakeFace:
     def measure(self, masks):
         return FakeFace.queue.pop(0)
 
+    def midline(self):
+        return [[0.5, 0.0], [0.5, 1.0]]
+
 
 class FakeAnalysis:
     def __init__(self, concerns):
@@ -161,3 +164,34 @@ def test_the_view_token_reads_the_dashboard_but_changes_nothing(client, monkeypa
                        ('/admin/products', {'shop': 'a', 'name': 'b', 'listing': 'c'}), (f'/admin/p/{code}/audit', {})):
         r = client.post(path, data=data, follow_redirects=False) if data is not None else client.get(path, follow_redirects=False)
         assert r.headers['location'] == '/admin/login'
+
+
+def test_a_scan_answer_carries_the_overlays_but_the_trial_keeps_numbers_only(client, monkeypatch):
+    import numpy as np
+    use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
+    t = client.post('/api/trials', headers=DEV, data={'product': 'Matte Gel'}).json()
+    monkeypatch.setattr(api.youcam, 'analyze', lambda jpeg, concerns: type('A', (FakeAnalysis,), {})(concerns))
+    real = FakeAnalysis.__init__
+
+    def with_mask(self, concerns):
+        real(self, concerns)
+        self.masks = {c: np.full((40, 30), 0.5, np.float32) for c in concerns}
+    monkeypatch.setattr(FakeAnalysis, '__init__', with_mask)
+    r = send_scan(client, t['id'], 12.2, 9.6)
+    assert r['media']['midline'] == [[0.5, 0.0], [0.5, 1.0]]
+    assert all(v.startswith('data:image/png;base64,') for v in r['media']['overlays'].values())
+    assert 'media' not in client.get(f'/api/trials/{t["id"]}', headers=DEV).json()
+
+
+def test_the_promise_simulates_only_claimed_concerns_and_counts_units(client, monkeypatch):
+    use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
+    t = client.post('/api/trials', headers=DEV, data={'product': 'Matte Gel'}).json()
+    seen = {}
+
+    def simulate(jpeg, settings):
+        seen.update(settings)
+        return PHOTO.getvalue()
+    monkeypatch.setattr(api.youcam, 'simulate', simulate)
+    r = client.post(f'/api/trials/{t["id"]}/promise', headers=DEV, files={'photo': ('p.jpg', PHOTO.getvalue(), 'image/jpeg')}).json()
+    assert r['image'].startswith('data:image/jpeg;base64,')
+    assert set(seen) == {api.SIMULATE[c] for c in r['concerns']} and all(v == api.PROMISE_STRENGTH for v in seen.values())

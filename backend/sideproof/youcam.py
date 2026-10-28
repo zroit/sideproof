@@ -84,6 +84,17 @@ class YouCam:
         data = self._task('/s2s/v2.0/task/fitzpatrick-scale-analyzer', {'version': '1.0', 'src_file_id': file_id})
         return data['results'].get('fitzpatrick_scale')
 
+    def simulate(self, jpeg, settings):
+        """AI Skin Simulation: the photo with each concern improved by 0..1 (4 units for 1-4
+        concerns). Returns JPEG bytes; nothing is kept here."""
+        file_id = self.upload(jpeg)
+        data = self._task('/s2s/v2.0/task/skin-simulation', {'src_file_id': file_id, **settings})
+        results = data.get('results') or {}
+        url = results.get('url') if isinstance(results, dict) else (results[0].get('url') if results else None)
+        if not url:
+            raise YouCamError('simulation returned no image')
+        return httpx.get(url, timeout=60).content
+
     def analyze(self, jpeg, concerns):
         file_id = self.upload(jpeg)
         data = self._task('/s2s/v2.1/task/skin-analysis', {
