@@ -8,6 +8,18 @@ Dermatology trials solve this with a split-face design: the product goes on one 
 face and the other half is the control. SideProof brings that design to anyone with a phone,
 on top of YouCam Skin AI.
 
+## Try it
+
+- **App (web):** https://sideproof.zroit.com on a phone or a desktop browser. "See a finished
+  trial" opens a recorded trial without spending anything; "How it works" shows the idea in
+  four animated pictures.
+- **Android:** the APK in the submission (the same Flutter app).
+- **A shop's product page with the trial on it:** `https://sideproof.zroit.com/shop/<code>`
+  (the code is in the submission's testing notes). The brand, Kestrel & Fern, is made up.
+- **Brand dashboard, read-only:** https://sideproof.zroit.com/dashboard with the view token
+  from the testing notes.
+- **API:** https://sideproof.zroit.com/docs.
+
 ## How it works
 
 1. **Plan.** Photograph the label or paste the shop's claims. An agent maps each claim to
@@ -30,6 +42,17 @@ on top of YouCam Skin AI.
 
 The agent decides and explains; it never measures. Every number comes from YouCam or from
 the trial math, and an answer that quotes a number the tools never returned is sent back.
+
+## The app
+
+Before the first trial, "How it works" walks through the design in four animated pictures:
+weather and sleep change the whole face, the product goes on one half, YouCam maps both
+halves, only a change past the noise counts. A trial then shows where it is (baseline,
+product on, scans, verdict), what to do before each photo (face a window, bare skin, look
+straight, same spot), which half gets the product, the agent's next step after each scan, a
+chart per concern of the treated half against the control with the noise band, and the
+verdict: a split disc in the result's colour and each claim with its result. Light and dark;
+the same Flutter code runs on Android and the web.
 
 ## For shops and brands
 
@@ -55,7 +78,8 @@ numbers. YouCam keeps uploaded files for 30 days under its own retention policy.
 - `backend/` Python, FastAPI, SQLite. `sideproof/api.py` is the HTTP API (OpenAPI docs at
   `/docs`), `face.py` the photo checks and the per-half measurement, `trial.py` the trial
   math, `agent.py` the agent, `llm.py` the model providers, `admin.py` the dashboard.
-- `app/` Flutter, one codebase for Android and the web.
+- `app/` Flutter, one codebase for Android and the web. `lib/explainer.dart` is How it works,
+  `lib/brand.dart` the mark and the face drawing, `tool/make_icons.py` the launcher icons.
 - `backend/demo/demo_trial.json` the demo trial the app opens without spending units: numbers
   only, recorded by `backend/scripts/record_demo.py` through the real API (YouCam Skin
   Analysis, the Gemini agent, the trial math) on YouCam's own sample face. Two things are
@@ -79,7 +103,9 @@ Backend:
 Other settings: `SIDEPROOF_DB` (SQLite path), `SIDEPROOF_WEB_DIR` (serve the Flutter web build
 from the same host), `SIDEPROOF_PUBLIC_URL` (for trial links), `SIDEPROOF_ADMIN_HOST` (serve
 `/admin` only on that host name; `/dashboard` stays on every host), `GEMINI_MODEL` (default
-`gemini-3.5-flash`). Each key can also come from a file through `NAME_FILE`; the file holds
+`gemini-3.5-flash`, with `gemini-3.1-flash-lite` as the fallback). The agent model can also be
+changed on the dashboard: `gemini` (reads label photos), `deepseek` (text only) or
+`claude-cli` (Claude Code on the same host, for development). Each key can also come from a file through `NAME_FILE`; the file holds
 the bare key or `NAME=value` lines.
 
 App:
