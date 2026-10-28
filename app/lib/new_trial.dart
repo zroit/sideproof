@@ -243,8 +243,9 @@ class _ThinkingState extends State<_Thinking>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!MediaQuery.of(context).disableAnimations && !_c.isAnimating)
+    if (!MediaQuery.of(context).disableAnimations && !_c.isAnimating) {
       _c.repeat();
+    }
   }
 
   @override

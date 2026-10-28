@@ -63,11 +63,12 @@ class _TrialScreenState extends State<TrialScreen> {
           : await widget.api.trial(widget.trialId!);
       setState(() => _t = t);
       _poll?.cancel();
-      if (t.thinking)
+      if (t.thinking) {
         _poll = Timer(
           const Duration(seconds: 3),
           _load,
         ); // the agent is still deciding
+      }
     } catch (e) {
       setState(() => _error = '$e');
     }
@@ -506,13 +507,14 @@ class _TrialScreenState extends State<TrialScreen> {
         ],
       ]);
     }
-    if (_error != null)
+    if (_error != null) {
       children.add(
         Padding(
           padding: const EdgeInsets.only(top: 12),
           child: _Note(_error!, danger: true),
         ),
       );
+    }
     if (children.isEmpty) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -546,8 +548,9 @@ class _TrialScreenState extends State<TrialScreen> {
       String url(String name) => widget.api.url('/demo-media/$name');
       latest = NetworkImage(url(photos['latest']));
       baseline = NetworkImage(url(photos['baseline']));
-      if (photos['promise'] != null)
+      if (photos['promise'] != null) {
         promise = NetworkImage(url(photos['promise']));
+      }
       overlays = {
         for (final e in ((m['overlays'] as Map)['latest'] as Map).entries)
           e.key as String: NetworkImage(url(e.value as String)),
@@ -559,8 +562,9 @@ class _TrialScreenState extends State<TrialScreen> {
       ];
     } else {
       final pics = _pics[t.id];
-      if (pics?.latest == null || pics!.overlays.isEmpty)
+      if (pics?.latest == null || pics!.overlays.isEmpty) {
         return const SizedBox.shrink();
+      }
       latest = MemoryImage(pics.latest!);
       if (pics.baseline != null) baseline = MemoryImage(pics.baseline!);
       if (pics.promise != null) promise = MemoryImage(pics.promise!);
