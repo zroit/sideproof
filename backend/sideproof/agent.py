@@ -96,7 +96,9 @@ def plan(provider, product, listing, image, budget, log):
             'betamethasone, mercury or mercurous chloride, hydroquinone above 2%) and set '
             'safe_to_try false then. Final: {"product": str, "claims": [{"text": str, '
             '"concern": str|null}], "concerns": [str], "days": int, "scan_every_hours": int, '
-            '"patch_first": bool, "safe_to_try": bool, "cautions": [str], "summary": str}')
+            '"patch_first": bool, "safe_to_try": bool, "cautions": [str], "summary": str}. The summary '
+            'is one or two short sentences for the person: what to put where and how long; no '
+            'units or costs.')
     tools = {
         'concern_catalog': ('the concerns YouCam measures, with what the mask shows and how fast a product can move it',
                             lambda: {k: {'shows': v[0], 'speed': v[1]} for k, v in trial.CATALOG.items()}),

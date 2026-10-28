@@ -24,6 +24,7 @@ class LLMError(RuntimeError):
 
 class ClaudeCli:
     name = 'claude-cli'
+    reads_images = True
 
     def __init__(self, model=None):
         self.model = model or os.environ.get('CLAUDE_CLI_MODEL', 'sonnet')
@@ -51,6 +52,7 @@ class ClaudeCli:
 
 class Gemini:
     name = 'gemini'
+    reads_images = True
 
     # Busy answers (429, 500, 503) are common and short-lived: wait and retry, last try on the
     # lighter model. gemini-2.5-flash is closed to new keys.
@@ -70,17 +72,23 @@ class Gemini:
         body = {'system_instruction': {'parts': [{'text': system}]},
                 'contents': [{'role': 'user', 'parts': parts}],
                 'generationConfig': {'responseMimeType': 'application/json', 'temperature': 0.2}}
+        daily = False     # a per-day quota won't come back in seconds: go straight to the fallback
         for wait, model in ((0, self.model), (3, self.model), (6, self.fallback)):
+            if daily and model == self.model:
+                continue
             time.sleep(wait)
             try:
                 r = httpx.post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
                                headers={'x-goog-api-key': key}, timeout=90, json=body)
             except httpx.TimeoutException:
                 continue
+            if r.status_code == 429 and 'PerDay' in r.text:
+                daily = True
+                continue
             if r.status_code not in self.RETRY:
                 break
         else:
-            raise LLMError('gemini: busy, try again in a minute')
+            raise LLMError("gemini: today's quota is used up" if daily else 'gemini: busy, try again in a minute')
         if r.status_code != 200:
             raise LLMError(f'gemini: HTTP {r.status_code}')
         try:
@@ -91,6 +99,7 @@ class Gemini:
 
 class DeepSeek:
     name = 'deepseek'
+    reads_images = False
 
     def __init__(self, model=None):
         self.model = model or os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat')

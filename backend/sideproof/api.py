@@ -94,6 +94,8 @@ def create_trial(product: str = Form('', max_length=120), listing: str = Form(''
         raise HTTPException(422, 'product name needed')
     image = None
     if label:
+        if not provider(con).reads_images:
+            raise HTTPException(422, "This agent model can't read photos. Type the claims instead.")
         image = face.jpeg(face.prepare(label.file.read()))
     tid = secrets.token_urlsafe(9)
     budget = {'units_left_today': int(db.setting(con, 'daily_unit_cap')) - db.units_today(con), 'cost_per_scan': unit_cost(4)}

@@ -47,3 +47,17 @@ def test_gemini_does_not_retry_a_bad_request(monkeypatch):
     with pytest.raises(llm.LLMError, match='HTTP 400'):
         g.complete('sys', 'hi')
     assert calls == ['main']
+
+
+def test_gemini_skips_to_the_fallback_when_the_daily_quota_is_gone(monkeypatch):
+    g, calls = gemini_with(monkeypatch, [Answer(429, 'GenerateRequestsPerDayPerProjectPerModel-FreeTier'), Answer(200)])
+    g.fallback = 'lite'
+    assert g.complete('sys', 'hi') == '{"ok": true}'
+    assert calls == ['main', 'lite']
+
+
+def test_gemini_says_when_the_daily_quota_is_gone_everywhere(monkeypatch):
+    daily = 'GenerateRequestsPerDayPerProjectPerModel-FreeTier'
+    g, _ = gemini_with(monkeypatch, [Answer(429, daily), Answer(429, daily)])
+    with pytest.raises(llm.LLMError, match="quota is used up"):
+        g.complete('sys', 'hi')
