@@ -226,7 +226,7 @@ def product_page(con, code, base, read_only):
     if not p:
         raise HTTPException(404)
     o = outcomes(con, code)
-    link = f'{PUBLIC_URL}/?product={code}'
+    link = f'{PUBLIC_URL}/new/?product={code}'
     rows = ''.join(f'<tr><td>{trial.CATALOG[c][0]}</td><td>{counts_cell(k)}</td></tr>' for c, k in o['concerns'].items())
     types = sorted(o['by_skin_type'])
     type_rows = ''.join(f'<tr><td>{trial.CATALOG[c][0]}</td>' + ''.join(

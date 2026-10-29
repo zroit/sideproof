@@ -128,7 +128,7 @@ def test_a_shop_sees_its_trials_and_the_claim_audit(client, monkeypatch):
     r = client.post('/admin/products', data={'shop': 'Glow Lab', 'name': 'Matte Gel', 'listing': 'Controls shine all day.'})
     code = r.url.path.rsplit('/', 1)[1]
     assert client.get(f'/api/products/{code}').json()['name'] == 'Matte Gel'
-    assert f'href="/?product={code}"' in client.get(f'/shop/{code}').text
+    assert f'href="/new/?product={code}"' in client.get(f'/shop/{code}').text
 
     use_model(monkeypatch, [{'thought': 'ok', 'final': PLAN}])
     t = client.post('/api/trials', headers=DEV, data={'code': code}).json()

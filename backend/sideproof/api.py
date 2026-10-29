@@ -258,7 +258,7 @@ def example_shop(code: str, con=Depends(get_db)):
     if not p:
         raise HTTPException(404, 'unknown product code')
     page = (config.HERE / 'static' / 'shop.html').read_text()
-    for key, value in (('name', p['name']), ('shop', p['shop'] or ''), ('listing', p['listing'] or ''), ('link', f'/?product={code}')):
+    for key, value in (('name', p['name']), ('shop', p['shop'] or ''), ('listing', p['listing'] or ''), ('link', f'/new/?product={code}')):
         page = page.replace('{' + key + '}', html.escape(value))
     return HTMLResponse(page)
 
