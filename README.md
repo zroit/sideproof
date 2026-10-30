@@ -89,8 +89,9 @@ than 3 trials.
 ## Privacy
 
 Photos are measured in memory and dropped. The server keeps numbers only: per-half coverage,
-scores, the agent's steps. The language model never sees a face, only the label photo and
-numbers. YouCam keeps uploaded files for 30 days under its own retention policy.
+scores, the agent's steps. The agent runs on Gemini; when every Gemini model is busy or out of
+quota it falls back to an open model (Qwen3-VL-8B, served by vLLM) on our own Modal endpoint.
+Neither ever sees a face, only the claims, the label photo and numbers. YouCam keeps uploaded files for 30 days under its own retention policy.
 
 ## Layout
 
@@ -129,9 +130,12 @@ Other settings: `SIDEPROOF_DB` (SQLite path), `SIDEPROOF_WEB_DIR` (serve the web
 same host), `SIDEPROOF_DOWNLOADS_DIR` (serve `downloads/` at `/dl/`), `SIDEPROOF_PUBLIC_URL` (for trial links), `SIDEPROOF_ADMIN_HOST` (serve
 `/admin` only on that host name; `/dashboard` stays on every host), `GEMINI_MODEL` (default
 `gemini-3.5-flash`, with `gemini-3.1-flash-lite` as the fallback). The agent model can also be
-changed on the dashboard: `gemini` (reads label photos), `deepseek` (text only) or
+changed on the dashboard: `gemini` (reads label photos), `modal` (the open fallback model alone),
+`deepseek` (text only) or
 `claude-cli` (Claude Code on the same host, for development). Each key can also come from a file through `NAME_FILE`; the file holds
-the bare key or `NAME=value` lines.
+the bare key or `NAME=value` lines. `SIDEPROOF_MODAL_URL` and `SIDEPROOF_MODAL_KEY` (or
+`_FILE`) turn on the fallback: an OpenAI-style endpoint serving the model as `lab`. It is woken
+in the background whenever Gemini is called or a scan starts, so it is up if Gemini fails.
 
 Web:
 

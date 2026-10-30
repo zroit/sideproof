@@ -1,8 +1,10 @@
 """Language model providers behind one call: complete(system, prompt, image=None) -> text.
 
 claude-cli runs Claude Code headless on the host (development only: it needs that machine's
-login). gemini and deepseek take API keys and are what the public demo uses. The models
-never see a face: only label photos and numbers.
+login). gemini and deepseek take API keys and are what the public demo uses. modal is an open
+model (Qwen3-VL, served by vLLM) on our own Modal endpoint: Gemini falls back to it when every
+Gemini model is busy or out of quota. The models never see a face: only label photos and
+numbers.
 """
 import base64
 import json
@@ -12,6 +14,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 
 import httpx
@@ -69,6 +72,18 @@ class Gemini:
         self.fallback = os.environ.get('GEMINI_FALLBACK_MODEL', 'gemini-3.1-flash-lite')
 
     def complete(self, system, prompt, image=None):
+        prewake()       # the fallback starts waking now, so it is up if Gemini fails
+        try:
+            return self._ask(system, prompt, image)
+        except LLMError as e:
+            if not LabModel.configured():
+                raise
+            try:
+                return LabModel().complete(system, prompt, image)
+            except LLMError as lab:
+                raise LLMError(f'{e}; {lab}') from lab
+
+    def _ask(self, system, prompt, image):
         key = config.secret('GEMINI_API_KEY')
         if not key:
             raise LLMError('gemini: no key configured')
@@ -124,7 +139,66 @@ class DeepSeek:
         return r.json()['choices'][0]['message']['content']
 
 
-PROVIDERS = {p.name: p for p in (ClaudeCli, Gemini, DeepSeek)}
+class LabModel:
+    """An open model on our own Modal endpoint: vLLM's OpenAI-style API, an API key, model "lab".
+    It sleeps when idle and wakes on a request in a minute or two; a request that waits past
+    Modal's 150 s is redirected and its answer lost, so it is woken with /health first."""
+    name = 'modal'
+    reads_images = True
+    WAKE_S = 240
+
+    @staticmethod
+    def configured():
+        return bool(config.secret('SIDEPROOF_MODAL_URL') and config.secret('SIDEPROOF_MODAL_KEY'))
+
+    def complete(self, system, prompt, image=None):
+        base, key = config.secret('SIDEPROOF_MODAL_URL'), config.secret('SIDEPROOF_MODAL_KEY')
+        if not (base and key):
+            raise LLMError('modal: no endpoint configured')
+        base = base.rstrip('/')
+        start = time.time()
+        while not _awake(base):
+            if time.time() - start > self.WAKE_S:
+                raise LLMError('modal: the model did not wake up')
+            time.sleep(5)
+        content = [{'type': 'text', 'text': prompt}]
+        if image:
+            content.append({'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,' + base64.b64encode(image).decode()}})
+        try:
+            r = httpx.post(f'{base}/v1/chat/completions', headers={'Authorization': 'Bearer ' + key}, timeout=140, json={
+                'model': 'lab', 'temperature': 0.2, 'max_tokens': 1500, 'response_format': {'type': 'json_object'},
+                'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': content}]})
+        except httpx.HTTPError as e:
+            raise LLMError(f'modal: {type(e).__name__}')
+        if r.status_code != 200:
+            raise LLMError(f'modal: HTTP {r.status_code}')
+        return r.json()['choices'][0]['message']['content']
+
+
+def _awake(base):
+    """True once the model answers /health. While it starts, the request is held (up to Modal's
+    150 s), which is what wakes it."""
+    try:
+        return httpx.get(f'{base}/health', timeout=150).status_code == 200
+    except httpx.HTTPError:
+        return False
+
+
+_last_wake = 0.0
+
+
+def prewake():
+    """Start waking the fallback model in the background, at most once a minute, so it is up by
+    the time Gemini fails. It costs a few minutes of GPU when Gemini answers after all."""
+    global _last_wake
+    base = config.secret('SIDEPROOF_MODAL_URL')
+    if not base or time.time() - _last_wake < 60:
+        return
+    _last_wake = time.time()
+    threading.Thread(target=_awake, args=(base.rstrip('/'),), daemon=True).start()
+
+
+PROVIDERS = {p.name: p for p in (ClaudeCli, Gemini, DeepSeek, LabModel)}
 
 
 def available():

@@ -119,7 +119,11 @@ def plan(provider, product, listing, image, budget, log):
         return None
 
     context = {'product': product, 'listing': listing or None, 'label_photo': bool(image)}
-    return run(provider, 'plan', task, context, tools, validate, log, image=image)
+    final = run(provider, 'plan', task, context, tools, validate, log, image=image)
+    for claim in final.get('claims') or []:     # some models write "null" or a name outside the catalog
+        if claim.get('concern') not in trial.CATALOG:
+            claim['concern'] = None
+    return final
 
 
 def next_step(provider, state, allowed, log):

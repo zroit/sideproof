@@ -71,3 +71,55 @@ def test_claude_cli_without_claude_code_is_an_agent_error_not_a_crash(monkeypatc
         llm.ClaudeCli().complete('sys', 'hi')
     monkeypatch.setattr(llm.shutil, 'which', lambda _: None)
     assert 'claude-cli' not in llm.available()
+
+
+class LabAnswer:
+    status_code = 200
+
+    def json(self):
+        return {'choices': [{'message': {'content': '{"from": "lab"}'}}]}
+
+
+def test_gemini_falls_back_to_the_lab_model_when_every_model_is_busy(monkeypatch):
+    sent = []
+
+    def post(url, **kw):
+        if '/models/' in url:
+            return Answer(503)
+        sent.append((url, kw['headers']['Authorization'], kw['json']['messages'][1]['content'][-1]['type']))
+        return LabAnswer()
+
+    monkeypatch.setenv('GEMINI_API_KEY', 'test-key')
+    monkeypatch.setenv('SIDEPROOF_MODAL_URL', 'https://lab.example/')
+    monkeypatch.setenv('SIDEPROOF_MODAL_KEY', 'lab-key')
+    monkeypatch.setattr(llm.httpx, 'post', post)
+    monkeypatch.setattr(llm.httpx, 'get', lambda url, **_: type('H', (), {'status_code': 200})())
+    monkeypatch.setattr(llm.time, 'sleep', lambda s: None)
+    assert llm.Gemini(model='main').complete('sys', 'hi', image=b'jpeg') == '{"from": "lab"}'
+    assert sent == [('https://lab.example/v1/chat/completions', 'Bearer lab-key', 'image_url')]
+
+
+def test_without_a_lab_model_gemini_fails_as_before(monkeypatch):
+    monkeypatch.delenv('SIDEPROOF_MODAL_URL', raising=False)
+    g, _ = gemini_with(monkeypatch, [Answer(503), Answer(503), Answer(503)])
+    with pytest.raises(llm.LLMError, match='busy'):
+        g.complete('sys', 'hi')
+
+
+def test_the_lab_model_gives_up_when_it_does_not_wake(monkeypatch):
+    monkeypatch.setenv('SIDEPROOF_MODAL_URL', 'https://lab.example')
+    monkeypatch.setenv('SIDEPROOF_MODAL_KEY', 'lab-key')
+    monkeypatch.setattr(llm.httpx, 'get', lambda url, **_: type('H', (), {'status_code': 503})())
+    monkeypatch.setattr(llm.time, 'sleep', lambda s: None)
+    monkeypatch.setattr(llm.LabModel, 'WAKE_S', -1)
+    with pytest.raises(llm.LLMError, match='did not wake'):
+        llm.LabModel().complete('sys', 'hi')
+
+
+def test_prewake_does_nothing_without_an_endpoint(monkeypatch):
+    monkeypatch.delenv('SIDEPROOF_MODAL_URL', raising=False)
+    started = []
+    monkeypatch.setattr(llm.threading, 'Thread', lambda **kw: started.append(kw))
+    llm._last_wake = 0.0
+    llm.prewake()
+    assert started == []

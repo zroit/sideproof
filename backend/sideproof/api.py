@@ -153,6 +153,7 @@ def add_scan(trial_id: str, background: BackgroundTasks, photo: UploadFile = Fil
     cost = unit_cost(len(concerns))
     if db.units_today(con) + cost > int(db.setting(con, 'daily_unit_cap')):
         raise HTTPException(429, "today's scan budget is used up; try again tomorrow or open the demo trial")
+    llm.prewake()      # the agent picks the next step after this scan; its fallback starts waking now
     try:
         result = youcam.analyze(face.jpeg(img), concerns)
     except YouCamError as e:
