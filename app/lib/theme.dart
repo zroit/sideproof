@@ -179,26 +179,32 @@ class GradientButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
-    return Opacity(
-      opacity: enabled ? 1 : 0.45,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: Sp.cta,
-          borderRadius: BorderRadius.circular(99),
-          boxShadow: const [BoxShadow(color: Color(0x66E3507E), blurRadius: 24, offset: Offset(0, 10), spreadRadius: -10)],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
+    // Its own button in the accessibility tree; without it the tap merged into the card around it.
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: enabled,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.45,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: Sp.cta,
             borderRadius: BorderRadius.circular(99),
-            onTap: onPressed,
-            child: Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (icon != null) ...[Icon(icon, color: Colors.white, size: 20), const SizedBox(width: 8)],
-                Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: 800, color: Colors.white))),
-              ]),
+            boxShadow: const [BoxShadow(color: Color(0x66E3507E), blurRadius: 24, offset: Offset(0, 10), spreadRadius: -10)],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(99),
+              onTap: onPressed,
+              child: Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  if (icon != null) ...[Icon(icon, color: Colors.white, size: 20), const SizedBox(width: 8)],
+                  Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: 800, color: Colors.white))),
+                ]),
+              ),
             ),
           ),
         ),
