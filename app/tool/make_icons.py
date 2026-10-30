@@ -105,6 +105,8 @@ def main():
     nxt = APP.parent / 'web' / 'public'
     mark(32, 0.98, background=None).save(nxt / 'favicon.png')
     mark(192, 0.84).save(nxt / 'icon-192.png')
+    ico = mark(64, 0.98, background=None)
+    ico.save(nxt / 'favicon.ico', sizes=[(16, 16), (32, 32), (48, 48), (64, 64)])
 
 
 if __name__ == '__main__':
