@@ -72,14 +72,19 @@ class _HomeScreenState extends State<HomeScreen> {
     await _open(NewTrialScreen(api: widget.api, code: code));
   }
 
+  // SafeArea keeps the sheet's end above the phone's navigation bar; it scrolls on a short screen.
   void _about() => showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
+        isScrollControlled: true,
+        useSafeArea: true,
         backgroundColor: Sp.cream,
         builder: (context) {
           final text = Theme.of(context).textTheme;
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          return SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Wordmark(size: 20),
               const SizedBox(height: 12),
@@ -93,6 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 18),
               const _Privacy(),
             ]),
+            ),
           );
         },
       );

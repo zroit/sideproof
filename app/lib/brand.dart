@@ -4,58 +4,89 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-/// The mark: a face split down the middle. The filled half had the product, the outlined half is
-/// the control; a closed eye on each. The same geometry as the web's 32x32 SVG.
+/// The mark: a woman's face, hair in a bun, split down the middle. The pink half had the product,
+/// the white half is the control; the hair is filled on the left and outlined on the right. The
+/// same drawing as the web's SVG mark and tool/make_icons.py: 192 units, the head from 12 to 180.
 class SideProofMark extends StatelessWidget {
-  const SideProofMark({super.key, this.size = 28, this.light = false});
+  const SideProofMark({super.key, this.size = 28});
   final double size;
-  final bool light; // white, for a coloured background
 
   @override
-  Widget build(BuildContext context) => CustomPaint(size: Size.square(size), painter: _MarkPainter(light));
+  Widget build(BuildContext context) => CustomPaint(size: Size.square(size), painter: _MarkPainter());
 }
 
 class _MarkPainter extends CustomPainter {
-  _MarkPainter(this.light);
-  final bool light;
+  static const _hairLight = Color(0xFFFFF8F1), _treated = Color(0xFFF2A3BB);
+  static const _left = Rect.fromLTRB(0, 0, 96, 192);
+  static const _features = [
+    [60.0, 100.0, 73.0, 93.0, 87.0, 98.0], [105.0, 98.0, 119.0, 93.0, 132.0, 100.0], // brows
+    [64.0, 113.0, 75.0, 120.0, 86.0, 113.0], [106.0, 113.0, 117.0, 120.0, 128.0, 113.0], // closed eyes
+    [90.0, 141.0, 96.0, 145.0, 102.0, 141.0], [84.0, 154.0, 96.0, 162.0, 108.0, 154.0], // nose, mouth
+  ];
+  static const _lashes = [
+    [68.4, 115.2, 66.5, 119.0], [72.8, 116.4, 72.0, 120.5], [77.2, 116.4, 78.0, 120.5], [81.6, 115.2, 83.5, 119.0],
+    [110.4, 115.2, 108.5, 119.0], [114.8, 116.4, 114.0, 120.5], [119.2, 116.4, 120.0, 120.5], [123.6, 115.2, 125.5, 119.0],
+  ];
+
+  static Paint _line(double width) => Paint()
+    ..color = Sp.ink
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = width
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+
+  static Path _curve(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) =>
+      Path()
+        ..moveTo(x0, y0)
+        ..cubicTo(x1, y1, x2, y2, x3, y3);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final k = size.shortestSide / 32;
     canvas.save();
-    canvas.scale(k);
-    final left = Path()
-      ..moveTo(15, 2.6)
-      ..cubicTo(8.6, 3, 4.8, 8.3, 4.8, 14.6)
-      ..cubicTo(4.8, 21.6, 9.2, 27.6, 15, 29.5)
+    canvas.scale(size.shortestSide / 168);
+    canvas.translate(-12, -12);
+    void hair(Rect oval) {
+      canvas.drawOval(oval, Paint()..color = _hairLight);
+      canvas.save();
+      canvas.clipRect(_left);
+      canvas.drawOval(oval, Paint()..color = Sp.ink);
+      canvas.restore();
+      canvas.drawOval(oval, _line(3.4));
+    }
+
+    // The bun, behind the head, then the hair: filled on the left, outlined with strands on the right.
+    hair(Rect.fromCircle(center: const Offset(96, 38), radius: 22));
+    canvas.drawPath(_curve(101, 19, 112, 22, 118, 31, 115, 44), _line(2.6));
+    hair(Rect.fromCenter(center: const Offset(96, 98), width: 118, height: 124));
+    canvas.drawPath(_curve(99, 38, 124, 41, 144, 59, 151, 88), _line(2.6));
+    canvas.drawPath(_curve(100, 52, 121, 58, 136, 74, 141, 98), _line(2.6));
+
+    // The face over the hair, its top edge the hairline; the midline from the hairline to the chin.
+    final face = Path()
+      ..moveTo(96, 70)
+      ..cubicTo(70, 73, 47, 93, 47, 127)
+      ..cubicTo(48, 151, 69, 175, 96, 177)
+      ..cubicTo(123, 175, 144, 151, 145, 127)
+      ..cubicTo(145, 93, 122, 73, 96, 70)
       ..close();
-    final right = Path()
-      ..moveTo(17.2, 3.9)
-      ..cubicTo(22.6, 4.8, 25.8, 9.3, 25.8, 14.6)
-      ..cubicTo(25.8, 20.6, 22.3, 25.6, 17.2, 27.8)
-      ..close();
-    final ink = light ? Colors.white : Sp.ink;
-    canvas.drawPath(left, Paint()..shader = light ? null : const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF48FB1), Color(0xFFE3507E), Color(0xFFB467E0)], stops: [0, .55, 1]).createShader(const Rect.fromLTWH(0, 0, 32, 32))
-      ..color = light ? Colors.white : Sp.rose);
-    canvas.drawPath(right, Paint()
-      ..color = ink
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4
-      ..strokeJoin = StrokeJoin.round);
-    Path eye(double x) => Path()
-      ..moveTo(x, 13.4)
-      ..cubicTo(x + 0.8, 14.2, x + 2.2, 14.2, x + 3, 13.4);
-    final lid = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
-      ..strokeCap = StrokeCap.round;
-    canvas.drawPath(eye(9.6), lid..color = light ? Sp.rose : Sp.cream);
-    canvas.drawPath(eye(19.6), lid..color = ink);
+    canvas.drawPath(face, Paint()..color = Colors.white);
+    canvas.save();
+    canvas.clipRect(_left);
+    canvas.drawPath(face, Paint()..color = _treated);
+    canvas.restore();
+    canvas.drawPath(face, _line(3.4));
+    canvas.drawLine(const Offset(96, 70), const Offset(96, 177), _line(3.4));
+    for (final c in _features) {
+      canvas.drawPath(Path()..moveTo(c[0], c[1])..quadraticBezierTo(c[2], c[3], c[4], c[5]), _line(3));
+    }
+    for (final c in _lashes) {
+      canvas.drawLine(Offset(c[0], c[1]), Offset(c[2], c[3]), _line(2));
+    }
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant _MarkPainter old) => old.light != light;
+  bool shouldRepaint(covariant _MarkPainter old) => false;
 }
 
 class Wordmark extends StatelessWidget {

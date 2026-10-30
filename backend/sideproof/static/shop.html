@@ -114,12 +114,18 @@ footer{background:var(--ink);color:#e9dcd4;padding:28px 24px;text-align:center;f
       <section class="sp" aria-label="Test it on half your face">
         <div>
           <div class="sp-head">
-            <svg width="38" height="38" viewBox="0 0 32 32" aria-hidden="true">
-              <defs><linearGradient id="sp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F48FB1"/><stop offset=".55" stop-color="#E3507E"/><stop offset="1" stop-color="#B467E0"/></linearGradient></defs>
-              <path d="M15 2.6C8.6 3 4.8 8.3 4.8 14.6c0 7 4.4 13 10.2 14.9Z" fill="url(#sp)"/>
-              <path d="M17.2 3.9c5.4.9 8.6 5.4 8.6 10.7 0 6-3.5 11-8.6 13.2Z" fill="none" stroke="#2B1E25" stroke-width="2.4" stroke-linejoin="round"/>
-              <path d="M9.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="#FBF6F1" stroke-width="1.6" stroke-linecap="round"/>
-              <path d="M19.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="#2B1E25" stroke-width="1.6" stroke-linecap="round"/>
+            <svg width="38" height="38" viewBox="12 12 168 168" aria-hidden="true">
+              <defs><clipPath id="sp-left"><rect width="96" height="192"/></clipPath></defs>
+              <g stroke="#2B1E25" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="96" cy="38" r="22" fill="#FFF8F1"/><circle cx="96" cy="38" r="22" fill="#2B1E25" clip-path="url(#sp-left)"/>
+                <path d="M101 19C112 22 118 31 115 44" fill="none" stroke-width="2.6"/>
+                <ellipse cx="96" cy="98" rx="59" ry="62" fill="#FFF8F1"/><ellipse cx="96" cy="98" rx="59" ry="62" fill="#2B1E25" clip-path="url(#sp-left)"/>
+                <path d="M99 38C124 41 144 59 151 88M100 52C121 58 136 74 141 98" fill="none" stroke-width="2.6"/>
+                <path d="M96 70C70 73 47 93 47 127C48 151 69 175 96 177C123 175 144 151 145 127C145 93 122 73 96 70Z" fill="#FFFFFF"/><path d="M96 70C70 73 47 93 47 127C48 151 69 175 96 177C123 175 144 151 145 127C145 93 122 73 96 70Z" fill="#F2A3BB" stroke="none" clip-path="url(#sp-left)"/><path d="M96 70C70 73 47 93 47 127C48 151 69 175 96 177C123 175 144 151 145 127C145 93 122 73 96 70Z" fill="none"/>
+                <path d="M96 70V177"/>
+                <path d="M60 100Q73 93 87 98M105 98Q119 93 132 100M64 113Q75 120 86 113M106 113Q117 120 128 113M90 141Q96 145 102 141M84 154Q96 162 108 154" fill="none" stroke-width="3"/>
+                <path d="M68.4 115.2L66.5 119M72.8 116.4L72 120.5M77.2 116.4L78 120.5M81.6 115.2L83.5 119M110.4 115.2L108.5 119M114.8 116.4L114 120.5M119.2 116.4L120 120.5M123.6 115.2L125.5 119" fill="none" stroke-width="2"/>
+              </g>
             </svg>
             <div><div class="serif">Not sure it works <em>on you</em>?</div><small>Test the sample on half your face before you buy.</small></div>
           </div>

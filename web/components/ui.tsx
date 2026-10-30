@@ -1,20 +1,31 @@
 import Link from "next/link";
 import type { ConcernStats } from "@/lib/api";
 
-/** The mark: a face split down the middle. The filled half had the product, the outlined half
- *  is the control; a closed eye on each. */
+const FACE = "M96 70C70 73 47 93 47 127C48 151 69 175 96 177C123 175 144 151 145 127C145 93 122 73 96 70Z";
+
+/** The mark: a woman's face, hair in a bun, split down the middle. The pink half had the product,
+ *  the white half is the control; the hair is filled on the left and outlined on the right. The
+ *  same drawing as SideProofMark in the app and app/tool/make_icons.py. */
 export function Mark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="mark">
+    <svg width={size} height={size} viewBox="12 12 168 168" aria-hidden="true" className="mark">
       <defs>
-        <linearGradient id="sp-mark" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#F48FB1" /><stop offset=".55" stopColor="#E3507E" /><stop offset="1" stopColor="#B467E0" />
-        </linearGradient>
+        <clipPath id="sp-mark-left"><rect width="96" height="192" /></clipPath>
       </defs>
-      <path d="M15 2.6C8.6 3 4.8 8.3 4.8 14.6c0 7 4.4 13 10.2 14.9Z" fill="url(#sp-mark)" />
-      <path d="M17.2 3.9c5.4.9 8.6 5.4 8.6 10.7 0 6-3.5 11-8.6 13.2Z" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" />
-      <path d="M9.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="#FBF6F1" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M19.6 13.4c.8.8 2.2.8 3 0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <g stroke="#2B1E25" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="96" cy="38" r="22" fill="#FFF8F1" />
+        <circle cx="96" cy="38" r="22" fill="#2B1E25" clipPath="url(#sp-mark-left)" />
+        <path d="M101 19C112 22 118 31 115 44" fill="none" strokeWidth="2.6" />
+        <ellipse cx="96" cy="98" rx="59" ry="62" fill="#FFF8F1" />
+        <ellipse cx="96" cy="98" rx="59" ry="62" fill="#2B1E25" clipPath="url(#sp-mark-left)" />
+        <path d="M99 38C124 41 144 59 151 88M100 52C121 58 136 74 141 98" fill="none" strokeWidth="2.6" />
+        <path d={FACE} fill="#FFFFFF" />
+        <path d={FACE} fill="#F2A3BB" stroke="none" clipPath="url(#sp-mark-left)" />
+        <path d={FACE} fill="none" />
+        <path d="M96 70V177" />
+        <path d="M60 100Q73 93 87 98M105 98Q119 93 132 100M64 113Q75 120 86 113M106 113Q117 120 128 113M90 141Q96 145 102 141M84 154Q96 162 108 154" fill="none" strokeWidth="3" />
+        <path d="M68.4 115.2L66.5 119M72.8 116.4L72 120.5M77.2 116.4L78 120.5M81.6 115.2L83.5 119M110.4 115.2L108.5 119M114.8 116.4L114 120.5M119.2 116.4L120 120.5M123.6 115.2L125.5 119" fill="none" strokeWidth="2" />
+      </g>
     </svg>
   );
 }
