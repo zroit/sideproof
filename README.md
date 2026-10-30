@@ -8,12 +8,28 @@ Dermatology trials solve this with a split-face design: the product goes on one 
 face and the other half is the control. SideProof brings that design to anyone with a phone,
 on top of YouCam Skin AI.
 
+![The Android app: a photo picked from the gallery, then a photo lit from one side refused](docs/demo.gif)
+
+The 2:41 demo video is on the Devpost page.
+
+| | | |
+|---|---|---|
+| ![The web app in a browser](docs/screenshots/01-web-landing.jpg) | ![A shop's product page with the trial link](docs/screenshots/02-shop-trial-link.jpg) | ![Picking a photo from the gallery in the app](docs/screenshots/03-app-pick-from-gallery.jpg) |
+| On the web | A trial link next to Add to bag | Camera or gallery |
+| ![A side-lit photo refused](docs/screenshots/04-app-side-light-refused.jpg) | ![The promise from YouCam AI Skin Simulation](docs/screenshots/05-app-promise.jpg) | ![YouCam's map on both halves](docs/screenshots/06-app-both-halves.jpg) |
+| Side light refused, for free | The promise, on this face | Every scan, both halves |
+| ![The verdict, claim by claim](docs/screenshots/07-app-verdict.jpg) | ![A finished trial over a full day](docs/screenshots/08-web-full-day-supported.jpg) | ![For shops and brands](docs/screenshots/09-for-brands.jpg) |
+| The verdict, claim by claim | Over a full day: supported | For shops and brands |
+
 ## Try it
 
 - **App (web):** https://sideproof.zroit.com on a phone or a desktop browser. "See a finished
   trial" opens a recorded trial without spending anything; "How it works" shows the idea in
   four animated pictures.
-- **Android:** a Flutter app on the same backend; the APK link is in the testing notes.
+- **Android:** a Flutter app on the same backend:
+  https://sideproof.zroit.com/dl/za5rjn7j/sideproof.apk
+- **The staged photo set** from the video, to run the same trial:
+  https://sideproof.zroit.com/dl/za5rjn7j/sideproof-photos.zip (README inside).
 - **A shop's product page with the trial on it:** `https://sideproof.zroit.com/shop/<code>`
   (the code is in the submission's testing notes). The brand, Kestrel & Fern, is made up.
 - **Brand dashboard, read-only:** https://sideproof.zroit.com/dashboard with the view token
@@ -127,6 +143,8 @@ Android:
     cd app
     flutter test
     flutter build apk --release --dart-define=API_BASE=https://your-backend
+
+Built solo, with Claude Code as a coding assistant.
 
 ## Licence
 
