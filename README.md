@@ -13,7 +13,7 @@ on top of YouCam Skin AI.
 - **App (web):** https://sideproof.zroit.com on a phone or a desktop browser. "See a finished
   trial" opens a recorded trial without spending anything; "How it works" shows the idea in
   four animated pictures.
-- **Android:** the APK in the submission (the same Flutter app).
+- **Android:** a Flutter app on the same backend; the APK link is in the testing notes.
 - **A shop's product page with the trial on it:** `https://sideproof.zroit.com/shop/<code>`
   (the code is in the submission's testing notes). The brand, Kestrel & Fern, is made up.
 - **Brand dashboard, read-only:** https://sideproof.zroit.com/dashboard with the view token
@@ -51,8 +51,8 @@ halves, only a change past the noise counts. A trial then shows where it is (bas
 product on, scans, verdict), what to do before each photo (face a window, bare skin, look
 straight, same spot), which half gets the product, the agent's next step after each scan, a
 chart per concern of the treated half against the control with the noise band, and the
-verdict: a split disc in the result's colour and each claim with its result. Light and dark;
-the same Flutter code runs on Android and the web.
+verdict: a split disc in the result's colour and each claim with its result. The web app
+(Next.js) and the Android app (Flutter) share the backend and the design.
 
 ## For shops and brands
 
@@ -65,6 +65,9 @@ than 3 trials.
 ## YouCam APIs used
 
 - **AI Skin Analysis** (v2.1, SD): scores and the per-concern masks SideProof splits by half.
+- **AI Skin Simulation**: the promise. Before the trial, what the claimed effect would look
+  like on the person's own face, drawn on the treated half, so the result has something to be
+  held against.
 - **AI Fitzpatrick Skin Type**: once per trial, on the photo YouCam already holds.
 
 ## Privacy
@@ -83,11 +86,14 @@ numbers. YouCam keeps uploaded files for 30 days under its own retention policy.
   `web-dist/`, which the backend serves.
 - `app/` Flutter for Android. `lib/explainer.dart` is How it works, `lib/brand.dart` the mark
   and the face drawing, `tool/make_icons.py` the launcher icons.
-- `backend/demo/demo_trial.json` the demo trial the app opens without spending units: numbers
-  only, recorded by `backend/scripts/record_demo.py` through the real API (YouCam Skin
-  Analysis, the Gemini agent, the trial math) on YouCam's own sample face. Two things are
-  staged: the product is a digital matte filter on the treated half, and the clock moves
-  forward between scans.
+- `backend/demo/` the two demo trials the app opens without spending units, recorded through
+  the real API (YouCam Skin Analysis and Skin Simulation, the agent, the trial math) on
+  YouCam's own sample faces. `demo_trial.json` (Matte Gel, by `scripts/record_demo.py`): the
+  product is a digital matte filter on the treated half. `serum_trial.json` (Glow Serum, by
+  `scripts/record_serum_demo.py`): the product's effect is YouCam AI Skin Simulation at rising
+  strength. In both the clock moves forward between scans. Their pictures are in
+  `demo/media/<trial id>/`.
+- `downloads/` the Android APK, served at `/dl/`.
 
 ## Run it
 
@@ -103,8 +109,8 @@ Backend:
     .venv/bin/uvicorn sideproof.api:app --port 8000
     .venv/bin/pytest
 
-Other settings: `SIDEPROOF_DB` (SQLite path), `SIDEPROOF_WEB_DIR` (serve the Flutter web build
-from the same host), `SIDEPROOF_PUBLIC_URL` (for trial links), `SIDEPROOF_ADMIN_HOST` (serve
+Other settings: `SIDEPROOF_DB` (SQLite path), `SIDEPROOF_WEB_DIR` (serve the web build from the
+same host), `SIDEPROOF_DOWNLOADS_DIR` (serve `downloads/` at `/dl/`), `SIDEPROOF_PUBLIC_URL` (for trial links), `SIDEPROOF_ADMIN_HOST` (serve
 `/admin` only on that host name; `/dashboard` stays on every host), `GEMINI_MODEL` (default
 `gemini-3.5-flash`, with `gemini-3.1-flash-lite` as the fallback). The agent model can also be
 changed on the dashboard: `gemini` (reads label photos), `deepseek` (text only) or
@@ -120,7 +126,7 @@ Android:
 
     cd app
     flutter test
-    flutter build apk --dart-define=API_BASE=https://your-backend
+    flutter build apk --release --dart-define=API_BASE=https://your-backend
 
 ## Licence
 

@@ -2,6 +2,7 @@
 to put a split-face trial on its own page."""
 import html
 import json
+import mimetypes
 import os
 import secrets
 import time
@@ -322,6 +323,10 @@ if DEMO_MEDIA.is_dir():
     app.mount('/demo-media', StaticFiles(directory=DEMO_MEDIA), name='demo-media')
 app.include_router(admin.router)
 app.include_router(admin.view)
+DOWNLOADS_DIR = os.environ.get('SIDEPROOF_DOWNLOADS_DIR', '')
+if DOWNLOADS_DIR and os.path.isdir(DOWNLOADS_DIR):     # the Android APK, at a path the testing notes give
+    mimetypes.add_type('application/vnd.android.package-archive', '.apk')
+    app.mount('/dl', StaticFiles(directory=DOWNLOADS_DIR), name='downloads')
 WEB_DIR = os.environ.get('SIDEPROOF_WEB_DIR', '')
-if WEB_DIR and os.path.isdir(WEB_DIR):     # the Flutter web build, served from the same host
+if WEB_DIR and os.path.isdir(WEB_DIR):     # the web build (Next.js static export), served from the same host
     app.mount('/', StaticFiles(directory=WEB_DIR, html=True), name='web')
