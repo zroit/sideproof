@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { shrink } from "@/lib/photos";
+import { useQuery } from "@/lib/query";
 import { Art } from "@/components/art";
 import { Nav } from "@/components/ui";
 
 /** Name the product and give its claims; the agent turns them into a trial plan. A shop's
  *  trial link (?product=CODE) brings the claims with it. */
 export default function NewTrial() {
-  const [code, setCode] = useState("");
+  const code = useQuery("product") ?? "";
   const [shop, setShop] = useState<{ name: string; shop: string } | null>(null);
   const [product, setProduct] = useState("");
   const [listing, setListing] = useState("");
@@ -18,12 +19,8 @@ export default function NewTrial() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const c = new URLSearchParams(window.location.search).get("product");
-    if (c) {
-      setCode(c);
-      api.product(c).then(setShop, (e) => setError(e.message));
-    }
-  }, []);
+    if (code) api.product(code).then(setShop, (e) => setError(e.message));
+  }, [code]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +28,8 @@ export default function NewTrial() {
     setError("");
     try {
       const t = await api.create({ product, listing, code }, label?.blob);
+      // A full load: the trial page then starts clean, with the new trial's id in its URL.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = `/trial/?id=${t.id}`;
     } catch (err) {
       setError((err as Error).message);

@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type Trial } from "@/lib/api";
 import { blobOf, load, save, shrink, type Saved } from "@/lib/photos";
+import { useQuery } from "@/lib/query";
 import { SplitPhoto } from "@/components/photo";
 import { TrialView } from "@/components/TrialView";
 import { Nav, PhotoTips } from "@/components/ui";
 
 export default function TrialPage() {
-  const [id, setId] = useState("");
+  const id = useQuery("id");
   const [t, setT] = useState<Trial | null>(null);
   const [pics, setPics] = useState<Saved>({});
   const [busy, setBusy] = useState("");
@@ -17,26 +18,27 @@ export default function TrialPage() {
   const file = useRef<HTMLInputElement>(null);
   const poll = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refresh = useCallback(async (trialId: string) => {
-    try {
-      const next = await api.trial(trialId);
-      setT(next);
-      if (poll.current) clearTimeout(poll.current);
-      if (next.decision?.state === "thinking") poll.current = setTimeout(() => refresh(trialId), 3000);
-    } catch (e) {
-      setError((e as Error).message);
+  const refresh = useCallback((trialId: string) => {
+    async function tick() {
+      try {
+        const next = await api.trial(trialId);
+        setT(next);
+        if (poll.current) clearTimeout(poll.current);
+        if (next.decision?.state === "thinking") poll.current = setTimeout(tick, 3000);
+      } catch (e) {
+        setError((e as Error).message);
+      }
     }
+    return tick();
   }, []);
 
   useEffect(() => {
-    const trialId = new URLSearchParams(window.location.search).get("id") ?? "";
-    setId(trialId);
-    if (trialId) {
-      refresh(trialId);
-      load(trialId).then(setPics);
+    if (id) {
+      refresh(id);
+      load(id).then(setPics);
     }
     return () => { if (poll.current) clearTimeout(poll.current); };
-  }, [refresh]);
+  }, [id, refresh]);
 
   async function run(label: string, action: () => Promise<Trial>) {
     setBusy(label);
@@ -166,7 +168,7 @@ export default function TrialPage() {
     <>
       <Nav back={{ href: "/", label: "Home" }} />
       <main className="page">
-        {!id && <p className="note danger">No trial here. Start one from the home page.</p>}
+        {id === "" && <p className="note danger">No trial here. Start one from the home page.</p>}
         {id && !t && !error && <p className="muted">Loading your trial…</p>}
         {!t && error && <p className="note danger">{error}</p>}
         {t && <TrialView trial={t} pics={pics} actions={panel} />}

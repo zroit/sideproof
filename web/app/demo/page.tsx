@@ -22,9 +22,9 @@ export default function DemoPage() {
 
   useEffect(() => {
     if (!id) return;
-    setTrial(null);
     api.demo(id).then(setTrial, (e) => setError(String(e.message ?? e)));
   }, [id]);
+  const current = trial?.id === id ? trial : null; // the one picked, once it has loaded
 
   return (
     <>
@@ -36,14 +36,14 @@ export default function DemoPage() {
               <button key={d.id} aria-pressed={d.id === id} onClick={() => { setId(d.id); history.replaceState(null, "", `?id=${d.id}`); }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {d.cover && <img src={media(d.cover)} alt="" />}
-                <span>{d.product}<small>{d.id === trial?.id ? span(trial) : "Finished trial"}</small></span>
+                <span>{d.product}<small>{d.id === current?.id ? span(current) : "Finished trial"}</small></span>
               </button>
             ))}
           </div>
         )}
         {error && <p className="note danger">{error}</p>}
-        {!trial && !error && <p className="muted">Loading the demo trial…</p>}
-        {trial && <TrialView key={trial.id} trial={trial} pics={demoPics(trial)} demo />}
+        {!current && !error && <p className="muted">Loading the demo trial…</p>}
+        {current && <TrialView key={current.id} trial={current} pics={demoPics(current)} demo />}
       </main>
     </>
   );
