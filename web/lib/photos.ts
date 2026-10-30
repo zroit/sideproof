@@ -7,6 +7,7 @@ export type Saved = {
   overlays?: Record<string, string>;
   baselineOverlays?: Record<string, string>;
   midline?: [[number, number], [number, number]];
+  span?: [number, number]; // hairline to chin along the midline, fractions of height
   promise?: string;
   note?: string; // a demo trial says what was staged
 };

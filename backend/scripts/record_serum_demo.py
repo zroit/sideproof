@@ -130,7 +130,7 @@ def main():
 
     out = demo.DEMO_DIR / 'media' / tid
     out.mkdir(parents=True, exist_ok=True)
-    manifest = {'treated': treated, 'midline': midline, 'photos': {}, 'overlays': {}, 'promise_concerns': promise['concerns']}
+    manifest = {'treated': treated, 'midline': midline, 'span': media['baseline'].get('span'), 'photos': {}, 'overlays': {}, 'promise_concerns': promise['concerns']}
     for name, img in (('baseline', orig), ('latest', latest)):
         small = img.copy()
         small.thumbnail((900, 900))

@@ -26,5 +26,9 @@
  "promise_concerns": [
   "radiance"
  ],
- "note": "A finished trial recorded through the real API on one of YouCam's sample faces. Staged: the serum's effect on the treated half is YouCam AI Skin Simulation (radiance) at rising strength, and the clock jumps between scans. YouCam's dullness map did not move past the noise, so the verdict is too early."
+ "note": "A finished trial recorded through the real API on one of YouCam's sample faces. Staged: the serum's effect on the treated half is YouCam AI Skin Simulation (radiance) at rising strength, and the clock jumps between scans. YouCam's dullness map did not move past the noise, so the verdict is too early.",
+ "span": [
+  0.2518,
+  0.8955
+ ]
 }

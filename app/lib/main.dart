@@ -196,8 +196,7 @@ class _DemoShowcase extends StatelessWidget {
     final m = d.media ?? const {};
     final photos = (m['photos'] as Map?) ?? const {};
     final overlays = ((m['overlays'] as Map?)?['latest'] as Map?) ?? const {};
-    final line = (m['midline'] as List?) ?? const [[0.5, 0], [0.5, 1]];
-    final midline = [(line[0][0] as num).toDouble(), (line[1][0] as num).toDouble()];
+    final midline = midlineOf(m);
     String url(String name) => api.url('/demo-media/$name');
     final claimed = [for (final c in d.plan['claims'] ?? const []) if (c['concern'] != null) c['concern'] as String];
     final shown = d.concerns.entries.where((e) => claimed.contains(e.key) && overlays.containsKey(e.key)).map((e) => e.value as Map<String, dynamic>).firstOrNull;

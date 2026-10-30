@@ -157,7 +157,7 @@ def add_scan(trial_id: str, background: BackgroundTasks, photo: UploadFile = Fil
     except YouCamError as e:
         raise HTTPException(502, f'YouCam: {e}')
     sides = found.measure(result.masks)
-    media = {'overlays': face.overlays(result.masks), 'midline': found.midline()}    # for this answer only
+    media = {'overlays': face.overlays(result.masks), 'midline': found.midline(), 'span': found.span()}    # for this answer only
     del img, result.masks
     now = time.time()
     if not t['skin_type'] and db.setting(con, 'fitzpatrick') == 'on' and db.units_today(con) + cost + 10 <= int(db.setting(con, 'daily_unit_cap')):

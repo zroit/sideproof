@@ -33,6 +33,7 @@ export type Step = { job: string; thought?: string; tool?: string; final?: unkno
 export type Media = {
   treated?: "img_left" | "img_right";
   midline?: [[number, number], [number, number]];
+  span?: [number, number];
   overlays?: Record<string, string>;
   photos?: Record<string, string>;
 };
@@ -53,7 +54,7 @@ export type Trial = {
   agent_log: Step[];
   media?: Media & { overlays?: Record<string, Record<string, string>> | Record<string, string> };
 };
-export type ScanAnswer = Trial & { media?: { overlays: Record<string, string>; midline: [[number, number], [number, number]] } };
+export type ScanAnswer = Trial & { media?: { overlays: Record<string, string>; midline: [[number, number], [number, number]]; span?: [number, number] } };
 export type Retake = { retake: string[]; issues: string[] };
 
 export function device(): string {

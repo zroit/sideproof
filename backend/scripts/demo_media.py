@@ -30,7 +30,7 @@ def main():
     orig = face.prepare(httpx.get(SAMPLE, timeout=60).content)
     _, found = face.find(orig)
     late = matte(orig, getattr(found, TREATED), MATTE[-1][1])
-    manifest = {'treated': TREATED, 'midline': found.midline(), 'photos': {}, 'overlays': {}, 'sides': {}}
+    manifest = {'treated': TREATED, 'midline': found.midline(), 'span': found.span(), 'photos': {}, 'overlays': {}, 'sides': {}}
     for name, img in (('baseline', orig), ('latest', late)):
         result = yc.analyze(jpeg_bytes(img), CONCERNS)
         manifest['sides'][name] = found.measure(result.masks)

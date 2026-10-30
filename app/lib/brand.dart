@@ -185,6 +185,22 @@ class FaceScene extends CustomPainter {
     );
     canvas.drawArc(Rect.fromCenter(center: Offset(cx, head.top + head.height * 0.77), width: head.width * 0.28, height: head.height * 0.08), 0.25, pi - 0.5, false, stroke);
 
+    // The hair, over the halves, so the midline runs from the hairline to the chin.
+    Offset at(double fx, double fy) => Offset(head.left + fx * head.width, head.top + fy * head.height);
+    final a = at(0.023, 0.357), b = at(0.5, -0.063), c = at(0.977, 0.357), d = at(0.5, _hairline);
+    final p1 = at(-0.068, 0.054), p2 = at(0.205, -0.063), p3 = at(0.795, -0.063), p4 = at(1.068, 0.054);
+    final p5 = at(0.909, 0.214), p6 = at(0.727, _hairline), p7 = at(0.273, _hairline), p8 = at(0.091, 0.214);
+    canvas.drawPath(
+      Path()
+        ..moveTo(a.dx, a.dy)
+        ..cubicTo(p1.dx, p1.dy, p2.dx, p2.dy, b.dx, b.dy)
+        ..cubicTo(p3.dx, p3.dy, p4.dx, p4.dy, c.dx, c.dy)
+        ..cubicTo(p5.dx, p5.dy, p6.dx, p6.dy, d.dx, d.dy)
+        ..cubicTo(p7.dx, p7.dy, p8.dx, p8.dy, a.dx, a.dy)
+        ..close(),
+      Paint()..color = const Color(0xFF5A3D46),
+    );
+
     // The midline, dashed, in the treated colour.
     if (split) _midline(canvas, head, cx, w, h);
 
@@ -197,10 +213,12 @@ class FaceScene extends CustomPainter {
     final dash = Paint()
       ..color = treated
       ..strokeWidth = max(1.4, w * 0.006);
-    for (var y = head.top - h * 0.03; y < head.bottom + h * 0.02; y += h * 0.035) {
-      canvas.drawLine(Offset(cx, y), Offset(cx, y + h * 0.018), dash);
+    for (var y = head.top + head.height * _hairline; y < head.bottom; y += h * 0.035) {
+      canvas.drawLine(Offset(cx, y), Offset(cx, min(y + h * 0.018, head.bottom)), dash);
     }
   }
+
+  static const _hairline = 0.134; // of the head's height
 
   void _drop(Canvas canvas, Offset cheek, double w, double h) {
     final t = Curves.easeIn.transform(drop!);

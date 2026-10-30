@@ -392,8 +392,16 @@ class PhotoTips extends StatelessWidget {
   }
 }
 
-/// The treated half of a photo, cut along the face's midline ([x0, x1] as fractions of width,
-/// top and bottom).
+/// The midline from a scan's or a demo's media: [x0, x1], where it meets the photo's top and
+/// bottom (fractions of width), then [y0, y1], the part to draw, hairline to chin (fractions of
+/// height). The halves are cut along the whole line.
+List<double> midlineOf(Map media) {
+  final line = (media['midline'] as List?) ?? const [[0.5, 0], [0.5, 1]];
+  final span = (media['span'] as List?) ?? const [0, 1];
+  return [for (final v in [line[0][0], line[1][0], span[0], span[1]]) (v as num).toDouble()];
+}
+
+/// The treated half of a photo, cut along the face's midline (see [midlineOf]).
 class HalfClipper extends CustomClipper<Path> {
   HalfClipper(this.midline, this.treatedLeft);
   final List<double> midline;
@@ -421,8 +429,10 @@ class _Midline extends CustomPainter {
     final p = Paint()
       ..color = color
       ..strokeWidth = 2.5;
-    final top = Offset(midline[0] * s.width, 0), bottom = Offset(midline[1] * s.width, s.height);
-    final steps = (s.height / 14).floor();
+    final y0 = midline.length > 3 ? midline[2] : 0.0, y1 = midline.length > 3 ? midline[3] : 1.0;
+    Offset at(double y) => Offset((midline[0] + (midline[1] - midline[0]) * y) * s.width, y * s.height);
+    final top = at(y0), bottom = at(y1);
+    final steps = ((y1 - y0) * s.height / 14).floor();
     for (var i = 0; i < steps; i += 2) {
       canvas.drawLine(Offset.lerp(top, bottom, i / steps)!, Offset.lerp(top, bottom, (i + 1) / steps)!, p);
     }

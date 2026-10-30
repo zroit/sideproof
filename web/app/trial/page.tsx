@@ -67,6 +67,7 @@ export default function TrialPage() {
         latest: photo.url,
         overlays: r.media?.overlays,
         midline: r.media?.midline,
+        span: r.media?.span,
         ...(first ? { baseline: photo.url, baselineOverlays: r.media?.overlays } : {}),
       }));
       setT(r);
@@ -122,7 +123,7 @@ export default function TrialPage() {
         <>
           <h2>Put the product on the shaded half only</h2>
           {pics.baseline ? (
-            <SplitPhoto src={pics.baseline} alt="Your baseline photo with the half for the product shaded" midline={pics.midline} treated={t.treated_image_side} tint treatedSrc={pics.promise} />
+            <SplitPhoto src={pics.baseline} alt="Your baseline photo with the half for the product shaded" midline={pics.midline} span={pics.span} treated={t.treated_image_side} tint treatedSrc={pics.promise} />
           ) : null}
           <p>{d?.message}</p>
           {pics.baseline && !pics.promise && (

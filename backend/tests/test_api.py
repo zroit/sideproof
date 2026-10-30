@@ -23,6 +23,9 @@ class FakeFace:
     def midline(self):
         return [[0.5, 0.0], [0.5, 1.0]]
 
+    def span(self):
+        return [0.2, 0.85]
+
 
 class FakeAnalysis:
     def __init__(self, concerns):
@@ -179,6 +182,7 @@ def test_a_scan_answer_carries_the_overlays_but_the_trial_keeps_numbers_only(cli
     monkeypatch.setattr(FakeAnalysis, '__init__', with_mask)
     r = send_scan(client, t['id'], 12.2, 9.6)
     assert r['media']['midline'] == [[0.5, 0.0], [0.5, 1.0]]
+    assert r['media']['span'] == [0.2, 0.85]
     assert all(v.startswith('data:image/png;base64,') for v in r['media']['overlays'].values())
     assert 'media' not in client.get(f'/api/trials/{t["id"]}', headers=DEV).json()
 

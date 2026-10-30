@@ -13,12 +13,14 @@ export function halfClip(midline: Line | undefined, treated: Side) {
 }
 
 /** A face photo split at its midline: YouCam's mask on top, the treated half tinted or showing
- *  another picture (the promise), and each half labelled with what YouCam measured. */
+ *  another picture (the promise), and each half labelled with what YouCam measured. The halves
+ *  are cut along the whole line; the dashed line itself runs hairline to chin (span). */
 export function SplitPhoto({
   src,
   alt,
   overlay,
   midline,
+  span,
   treated,
   tint = false,
   treatedSrc,
@@ -28,6 +30,7 @@ export function SplitPhoto({
   alt: string;
   overlay?: string;
   midline?: Line;
+  span?: [number, number];
   treated: Side;
   tint?: boolean;
   treatedSrc?: string;
@@ -35,6 +38,8 @@ export function SplitPhoto({
 }) {
   const clip = halfClip(midline, treated);
   const [[x0], [x1]] = midline ?? [[0.5, 0], [0.5, 1]];
+  const [y0, y1] = span ?? [0, 1];
+  const at = (y: number) => (x0 + (x1 - x0) * y) * 100;
   return (
     <figure className="split">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -49,7 +54,7 @@ export function SplitPhoto({
         <img src={overlay} alt="" className="layer overlay" />
       )}
       <svg className="layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <line x1={x0 * 100} y1="0" x2={x1 * 100} y2="100" className="midline" />
+        <line x1={at(y0)} y1={y0 * 100} x2={at(y1)} y2={y1 * 100} className="midline" />
       </svg>
       {labels && (
         <div className={`half-labels ${treated === "img_right" ? "" : "flip"}`}>

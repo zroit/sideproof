@@ -89,6 +89,7 @@ export default function Home() {
               alt={`One of YouCam's sample faces at the end of a trial, with YouCam's ${shown?.label.toLowerCase() ?? "oiliness"} map`}
               overlay={pics.overlays?.[shown?.concern ?? "oiliness"]}
               midline={pics.midline}
+              span={pics.span}
               treated={treated}
             /> : <div className="skeleton" />}
             {shown && last && (

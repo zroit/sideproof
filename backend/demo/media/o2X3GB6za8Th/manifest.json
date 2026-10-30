@@ -50,5 +50,9 @@
  "promise_concerns": [
   "oiliness"
  ],
- "note": "A finished trial recorded through the real API on YouCam's own sample face. Staged: the product is a digital matte filter on one half, and the clock jumps between scans."
+ "note": "A finished trial recorded through the real API on YouCam's own sample face. Staged: the product is a digital matte filter on one half, and the clock jumps between scans.",
+ "span": [
+  0.1741,
+  0.843
+ ]
 }

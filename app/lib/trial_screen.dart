@@ -145,11 +145,7 @@ class _TrialScreenState extends State<TrialScreen> {
           for (final e in (media['overlays'] as Map).entries)
             e.key as String: dataUrlBytes(e.value as String),
         };
-        final line = media['midline'] as List;
-        pics.midline = [
-          (line[0][0] as num).toDouble(),
-          (line[1][0] as num).toDouble(),
-        ];
+        pics.midline = midlineOf(media);
       }
       setState(() => _t = t);
       if (t.thinking) _poll = Timer(const Duration(seconds: 3), _load);
@@ -580,11 +576,7 @@ class _TrialScreenState extends State<TrialScreen> {
         for (final e in ((m['overlays'] as Map)['latest'] as Map).entries)
           e.key as String: NetworkImage(url(e.value as String)),
       };
-      final line = m['midline'] as List;
-      midline = [
-        (line[0][0] as num).toDouble(),
-        (line[1][0] as num).toDouble(),
-      ];
+      midline = midlineOf(m);
     } else {
       final pics = _pics[t.id];
       if (pics?.latest == null || pics!.overlays.isEmpty) {

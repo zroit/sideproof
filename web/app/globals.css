@@ -153,6 +153,7 @@ svg.layer .midline { stroke: #fff; stroke-width: 2.5; stroke-dasharray: 7 6; vec
 .art .face ellipse.skin-control { fill: rgba(217, 207, 199, .55); }
 .art .face ellipse.skin { fill: #fff6f0; }
 .art .art-midline { stroke: var(--rose); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.art .hair { fill: #5a3d46; }
 .art .treated { fill: rgba(227, 80, 126, .3); }
 .art-label { fill: var(--muted); font: 700 9px var(--body); }
 .art .band { fill: rgba(154, 138, 144, .2); }

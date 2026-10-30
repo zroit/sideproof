@@ -87,6 +87,7 @@ class Face:
         cy = points[:, 1].mean()
         up = hull[:, 1] < cy
         hull[up, 1] = cy + (hull[up, 1] - cy) * 1.25
+        self.top, self.chin = hull[:, 1].min(), points[152, 1]     # the stretched top sits near the hairline
         region = Image.new('L', size, 0)
         ImageDraw.Draw(region).polygon([tuple(p) for p in hull], fill=1)
         region = np.asarray(region, bool)
@@ -102,6 +103,11 @@ class Face:
     def midline(self):
         """The midline's ends, top and bottom of the photo, as fractions of width and height."""
         return [[round(self.b / self.w, 4), 0.0], [round((self.a * self.h + self.b) / self.w, 4), 1.0]]
+
+    def span(self):
+        """Where the face runs along the midline, hairline to chin, as fractions of height: the
+        part of the midline to draw. The halves are still cut along the whole line."""
+        return [round(max(0.0, self.top) / self.h, 4), round(min(self.h, self.chin) / self.h, 4)]
 
     def measure(self, masks):
         """Each concern's mask as percent coverage per half."""

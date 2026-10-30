@@ -88,6 +88,7 @@ export function TrialView({ trial: t, pics, actions, demo = false }: { trial: Tr
             alt={`The latest scan with YouCam's ${current.label.toLowerCase()} map`}
             overlay={pics.overlays?.[current.concern]}
             midline={pics.midline}
+            span={pics.span}
             treated={t.treated_image_side}
             labels={last ? { treated: `Treated ${pct(last.treated)}`, control: `Control ${pct(last.control)}` } : undefined}
           />
