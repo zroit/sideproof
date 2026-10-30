@@ -10,7 +10,7 @@ on top of YouCam Skin AI.
 
 ![The Android app: a photo picked from the gallery, then a photo lit from one side refused](docs/demo.gif)
 
-The 2:41 demo video is on the Devpost page.
+The demo video (2:41): https://youtu.be/xlNaY7hIKEg
 
 | | | |
 |---|---|---|
