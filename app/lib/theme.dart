@@ -156,6 +156,15 @@ ThemeData spTheme(Brightness _) {
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Sp.rose, width: 2)),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: Sp.rose, linearTrackColor: Sp.sunk),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: Sp.panel,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: const Color(0xFFFBE3EC),
+      elevation: 0,
+      height: 68,
+      labelTextStyle: WidgetStateProperty.resolveWith((s) => body(12.5, weight: s.contains(WidgetState.selected) ? 800 : 600, color: s.contains(WidgetState.selected) ? Sp.ink : Sp.muted)),
+      iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(color: s.contains(WidgetState.selected) ? Sp.rose : Sp.muted)),
+    ),
     expansionTileTheme: const ExpansionTileThemeData(shape: Border(), collapsedShape: Border()),
   );
 }

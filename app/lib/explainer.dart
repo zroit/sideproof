@@ -4,13 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'brand.dart';
 import 'theme.dart';
 
-/// How a split-face trial works, in four animated pictures. Shown before the first trial and
-/// from "How it works" on the home screen.
+/// How a split-face trial works, in four animated pictures. Shown page by page before the
+/// first trial; the Learn tab shows the same steps in one list ([LearnView]).
 class ExplainerScreen extends StatefulWidget {
   const ExplainerScreen({super.key, this.doneLabel = 'Got it'});
   final String doneLabel;
 
   static const _seenKey = 'explainer_seen';
+
+  static const steps = [
+    ('Sleep, weather and light change your whole face', 'So a before-and-after photo can\'t tell you what the product did.'),
+    ('The product goes on one half', 'The app picks the half at random. The other half gets nothing: it is the control.'),
+    ('YouCam Skin AI maps both halves', 'Each scan returns a map for every concern, like oiliness or redness. SideProof splits each map at your face\'s midline and measures the two halves.'),
+    ('Only a change past the noise counts', 'Two photos before you start measure your face\'s own left-right difference and how much photos vary. The product has to beat that by 2.5 times.'),
+  ];
 
   /// True once the person has gone through it.
   static Future<bool> seen() async => (await SharedPreferences.getInstance()).getBool(_seenKey) ?? false;
@@ -23,12 +30,7 @@ class _ExplainerScreenState extends State<ExplainerScreen> {
   final _pages = PageController();
   int _page = 0;
 
-  static const _steps = [
-    ('Sleep, weather and light change your whole face', 'So a before-and-after photo can\'t tell you what the product did.'),
-    ('The product goes on one half', 'The app picks the half at random. The other half gets nothing: it is the control.'),
-    ('YouCam Skin AI maps both halves', 'Each scan returns a map for every concern, like oiliness or redness. SideProof splits each map at your face\'s midline and measures the two halves.'),
-    ('Only a change past the noise counts', 'Two photos before you start measure your face\'s own left-right difference and how much photos vary. The product has to beat that by 2.5 times.'),
-  ];
+  static const _steps = ExplainerScreen.steps;
 
   Future<void> _next() async {
     if (_page < _steps.length - 1) {
@@ -110,6 +112,49 @@ class _Step extends StatelessWidget {
       Text(title, style: text.headlineSmall),
       const SizedBox(height: 10),
       Text(body, style: text.bodyLarge?.copyWith(height: 1.45, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+    ]);
+  }
+}
+
+/// The Learn tab: the four steps in one list, each picture with its title and words.
+class LearnView extends StatelessWidget {
+  const LearnView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 120), children: [
+      const AccentTitle('How it ', 'works', '', size: 34),
+      const SizedBox(height: 6),
+      Text('The split-face trial, the way dermatologists test a product, on your phone.', style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant)),
+      for (final (i, (title, words)) in ExplainerScreen.steps.indexed) ...[
+        const SizedBox(height: 18),
+        Container(
+          decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(28)),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            AspectRatio(aspectRatio: 1.3, child: ExplainerPicture(i)),
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(gradient: Sp.cta, shape: BoxShape.circle),
+                  child: Text('${i + 1}', style: body(13, weight: 800, color: Colors.white)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text(title, style: text.titleLarge)),
+              ]),
+            ),
+            const SizedBox(height: 8),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text(words, style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant))),
+          ]),
+        ),
+      ],
     ]);
   }
 }
